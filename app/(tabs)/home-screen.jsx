@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
   Text,
@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import axios from "axios";
 import BASE_URL from "../../utils/apiConfig";
 import * as Notifications from "expo-notifications";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function HomeScreen() {
   const [user, setUser] = useState(null);
@@ -255,6 +256,27 @@ export default function HomeScreen() {
     return () => subscription.remove();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      const refreshData = async () => {
+        await checkDailyData();
+
+        try {
+          const userId = await AsyncStorage.getItem("userId");
+          const surveyResponse = await axios.get(
+            `${BASE_URL}/api/generalData/get-survey/${userId}`
+          );
+          const survey = surveyResponse.data?.survey;
+          setGeneralSurvey(survey);
+        } catch (error) {
+          console.error("❌ שגיאה בטעינת הסקירה הכללית:", error);
+        }
+      };
+
+      refreshData();
+    }, [])
+  );
+
   if (loading) {
     return (
       <ActivityIndicator
@@ -332,9 +354,11 @@ export default function HomeScreen() {
                       )}
                     </>
                   ) : (
-                    <Text style={styles.text}>
-                      אין הודעות חדשות עבורך כרגע 🎉
-                    </Text>
+                    <View style={styles.messageBlock}>
+                      <Text style={styles.text}>
+                        אין הודעות חדשות עבורך כרגע.
+                      </Text>
+                    </View>
                   )}
                 </View>
               );
