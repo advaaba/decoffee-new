@@ -113,7 +113,7 @@ export default function Profile() {
           editedUser
         );
         setUser(editedUser);
-        Alert.alert("🎉", "הפרטים עודכנו בהצלחה במסד הנתונים");
+        Alert.alert( "הפרטים עודכנו בהצלחה במסד הנתונים");
       } catch (err) {
         Alert.alert("שגיאה", "עדכון נכשל");
         console.error(err);
