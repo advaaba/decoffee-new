@@ -5,6 +5,10 @@ const updateCoffeeSurvey = async (req, res) => {
     const { userId } = req.params;
     const surveyData = req.body;
 
+    console.log("📥 userId שהתקבל:", userId);
+    console.log("📥 surveyData שהתקבל:", JSON.stringify(surveyData, null, 2));
+    
+
     if (!userId) {
       return res
         .status(400)
@@ -32,6 +36,7 @@ const updateCoffeeSurvey = async (req, res) => {
       .json({ success: false, message: "❌ שגיאה בשרת", error: error.message });
   }
 };
+
 const getSurveyByUserId = async (req, res) => {
   try {
     const { userId } = req.params;

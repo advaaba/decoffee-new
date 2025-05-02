@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, I18nManager } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  I18nManager,
+} from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BASE_URL from "../../utils/apiConfig";
-import { useRouter } from "expo-router";
-
+import { useRouter, useFocusEffect } from "expo-router";
 // הפוך את הכיווניות אם צריך (רק אם עדיין לא מוגדר מראש)
 I18nManager.forceRTL?.();
 
@@ -12,110 +18,170 @@ export default function GeneralData() {
   const [surveyData, setSurveyData] = useState(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchSurveyData = async () => {
-      try {
-        const userId = await AsyncStorage.getItem("userId");
-        if (!userId) return;
+  const effectsMap = {
+    physically: "פיזית",
+    mentally: "רגשית",
+    both: "פיזית ורגשית",
+    none: "ללא השפעה",
+  };
 
-        const response = await axios.get(`${BASE_URL}/api/auth/get-user/${userId}`);
-        const coffeeData = response.data.user?.coffeeConsumption;
-        if (coffeeData) {
-          setSurveyData(coffeeData);
+  const timeMap = {
+    Morning: "בוקר",
+    Afternoon: "צהריים",
+    evening: "ערב",
+    night: "לילה",
+  };
+
+  const dayMap = {
+    Sunday: "ראשון",
+    Monday: "שני",
+    Tuesday: "שלישי",
+    Wednesday: "רביעי",
+    Thursday: "חמישי",
+    Friday: "שישי",
+    Saturday: "שבת",
+  };
+
+  const importanceMap = {
+    1: "במידה מועטה מאוד",
+    2: "במידה מועטה",
+    3: "במידה בינונית",
+    4: "במידה רבה",
+    5: "במידה רבה מאוד",
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchSurveyData = async () => {
+        try {
+          const userId = await AsyncStorage.getItem("userId");
+          if (!userId) return;
+  
+          const response = await axios.get(
+            `${BASE_URL}/api/generalData/get-survey/${userId}`
+          );
+          const coffeeData = response.data.survey;
+  
+          if (coffeeData) {
+            setSurveyData(coffeeData);
+          }
+        } catch (error) {
+          console.error("שגיאה בשליפת נתוני הסקירה:", error);
         }
-      } catch (error) {
-        console.error("שגיאה בשליפת נתוני הסקירה:", error);
-      }
-    };
-
-    fetchSurveyData();
-  }, []);
+      };
+  
+      fetchSurveyData();
+    }, [])
+  );
 
   if (!surveyData) {
     return (
-      <View style={styles.container}>
+      <View style={styles.container2}>
         <Text style={styles.loadingText}>⏳ טוען נתונים...</Text>
       </View>
     );
   }
 
   return (
-    <View contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>📋 סקירה כללית - נתוני קפה</Text>
 
       <View style={styles.card}>
-        <Text style={styles.label}>🍵 ממוצע כוסות ביום:</Text>
+        <Text style={styles.label}> ממוצע כוסות ביום:</Text>
         <Text style={styles.value}>{surveyData.cupsPerDay}</Text>
 
-        <Text style={styles.label}>🕗 זמני שתייה:</Text>
-        <Text style={styles.value}>{surveyData.consumptionTime.join(", ")}</Text>
-
-        <Text style={styles.label}>📏 סוגי קפה:</Text>
+        <Text style={styles.label}> זמני שתייה:</Text>
         <Text style={styles.value}>
-          {surveyData.coffeeType
-            .map((c) => `${c.name} (${c.cups} כוסות, ${c.size} מ״ל)`)
-            .join(" | ")}
+          {surveyData.consumptionTime.map((t) => timeMap[t] || t).join(", ")}
         </Text>
 
-        <Text style={styles.label}>🛌 שעות שינה:</Text>
+        <Text style={styles.label}> סוגי קפה:</Text>
+        {surveyData.coffeeType.map((c, index) => (
+          <Text key={index} style={styles.value}>
+            ☕ {c.name} - {c.cups} כוסות, {c.size} מ"ל
+          </Text>
+        ))}
+
+        <Text style={styles.label}> שעות שינה:</Text>
         <Text style={styles.value}>
-          {surveyData.sleepFromHour} - {surveyData.sleepToHour}
+          מ-{surveyData.sleepFromHour}:00 עד {surveyData.sleepToHour}:00
         </Text>
 
-        <Text style={styles.label}>💼 עובד/ת:</Text>
+        <Text style={styles.label}> עובד/ת:</Text>
         <Text style={styles.value}>
           {surveyData.isWorking === "yes" ? "כן" : "לא"}
         </Text>
 
         {surveyData.isWorking === "yes" && (
           <>
-            <Text style={styles.label}>🕘 שעות עבודה:</Text>
+            <Text style={styles.label}> שעות עבודה:</Text>
             <Text style={styles.value}>
-              {surveyData.workStartHour} - {surveyData.workEndHour}
+              מ-{surveyData.workStartHour}:00 עד {surveyData.workEndHour}:00
+            </Text>
+
+            <Text style={styles.label}> ימי עבודה:</Text>
+            <Text style={styles.value}>
+              {surveyData.workingDays.map((d) => dayMap[d] || d).join(", ")}
             </Text>
           </>
         )}
 
-        <Text style={styles.label}>📉 מנסה להפחית צריכה:</Text>
+        <Text style={styles.label}> מנסה להפחית צריכה:</Text>
         <Text style={styles.value}>
           {surveyData.isTryingToReduce === "yes" ? "כן" : "לא"}
         </Text>
 
         {surveyData.isTryingToReduce === "yes" && (
           <>
-            <Text style={styles.label}>✏️ הסבר:</Text>
+            <Text style={styles.label}> צורת ההפחתה:</Text>
             <Text style={styles.value}>{surveyData.reductionExplanation}</Text>
           </>
         )}
 
-        <Text style={styles.label}>📈 חשיבות המעקב:</Text>
-        <Text style={styles.value}>{surveyData.importanceLevel}/5</Text>
+        <Text style={styles.label}> חשיבות המעקב:</Text>
+        <Text style={styles.value}>
+          {importanceMap[surveyData.importanceLevel] || "לא צויין"}
+        </Text>
 
-        <Text style={styles.label}>🧠 השפעה:</Text>
-        <Text style={styles.value}>{surveyData.effects}</Text>
+        <Text style={styles.label}> השפעה:</Text>
+        <Text style={styles.value}>
+          {effectsMap[surveyData.effects] || "לא ידוע"}
+        </Text>
 
-        <Text style={styles.label}>🧾 תיאור אישי:</Text>
+        <Text style={styles.label}> תיאור אישי:</Text>
         <Text style={styles.value}>{surveyData.selfDescription}</Text>
       </View>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push({ pathname: "/CoffeeDetails", params: { editMode: "true" } })}
+        onPress={() =>
+          router.push({
+            pathname: "/CoffeeDetails",
+            params: { editMode: "true" },
+          })
+        }
       >
         <Text style={styles.buttonText}>עריכת הסקירה</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollContainer: { flexGrow: 1, paddingBottom: 20 },
   container: {
+    padding: 24,
+    // backgroundColor: "#f8fafc",
+    alignItems: "center",
+    minHeight: "100%",
+  },
+  container2: {
     padding: 10,
     gap: 10,
     direction: "rtl",
     alignItems: "stretch",
-    backgroundColor: "#FAFAFA",
   },
+  
   title: {
     fontSize: 20,
     fontWeight: "bold",
@@ -147,13 +213,25 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#4CAF50",
-    marginTop: 30,
-    paddingVertical: 14,
-    borderRadius: 10,
+    marginTop: 40,
+    paddingVertical: 16,
+    paddingHorizontal: 30,
+    borderRadius: 14,
     alignItems: "center",
     alignSelf: "center",
-    width: "60%",
+    width: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
   },
+  buttonText: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  
   buttonText: {
     color: "#fff",
     fontSize: 18,

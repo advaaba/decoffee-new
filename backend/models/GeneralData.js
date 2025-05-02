@@ -25,7 +25,7 @@ const generalDataSchema = new mongoose.Schema({
   isMotivation: Boolean,
   selfDescription: String,
   averageCaffeinePerDay: { type: Number },
-  workingDays: Number,
+  workingDays: [String]
 }, { timestamps: true });
 
 module.exports = mongoose.model('GeneralData', generalDataSchema);

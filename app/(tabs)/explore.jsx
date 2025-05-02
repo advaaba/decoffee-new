@@ -6,6 +6,7 @@ import RadioGroup from "react-native-radio-buttons-group";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import BASE_URL from "../../utils/apiConfig";
+// import { analyzeInitialPattern } from "../../analysis/initialBehaviorModel";
 
 export default function ExploreScreen() {
   const [insights, setInsights] = useState([]);

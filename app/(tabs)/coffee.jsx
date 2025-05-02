@@ -3,7 +3,6 @@ import { useRouter, useLocalSearchParams  } from "expo-router";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-// import { analyzeInitialPattern } from "../../analysis/initialBehaviorModel";
 import GeneralData from "./GeneralData";
 import CoffeeDetails from "./CoffeeDetails";
 import BASE_URL from "../../utils/apiConfig";
@@ -22,44 +21,28 @@ export default function CoffeeScreen() {
       try {
         const userId = await AsyncStorage.getItem("userId");
         if (!userId) return;
-
+    
         const response = await axios.get(
-          `${BASE_URL}/api/auth/get-user/${userId}`
+          `${BASE_URL}/api/generalData/get-survey/${userId}`
         );
-
-        const userData = response.data.user;
-        const caffeineMin = userData.caffeineRecommendationMin;
-        const caffeineMax = userData.caffeineRecommendationMax;
-        const finalCaffeine = userData.averageCaffeineRecommendation;
-        const coffeeData = userData.coffeeConsumption;
-        const averageCaffeinePerDay =
-          userData.averageCaffeinePerDay ??
-          coffeeData?.averageCaffeinePerDay ??
-          0;
-
-        // setAiMessage(aiText);
-        setCaffeineMin(caffeineMin);
-        setCaffeineMax(caffeineMax);
-        setCaffeine(finalCaffeine);
-
-        const hasData =
-          coffeeData &&
+    
+        const coffeeData = response.data.survey;
+    
+        const hasData = coffeeData &&
           Object.values(coffeeData).some((value) =>
             Array.isArray(value) ? value.length > 0 : !!value
           );
-
+    
         if (hasData) {
           setSurveyData(coffeeData);
           setIsFilled(true);
         }
-
-        // console.log("🔥 AI Response:", aiResponse.data);
+    
       } catch (error) {
-        console.error("שגיאה בשליפת נתוני coffeeConsumption:", error);
-        // setAiMessage("⚠️ לא הצלחנו לבצע ניתוח כרגע.");
+        console.error("שגיאה בשליפת הסקר מ-GeneralData:", error);
       }
     };
-
+    
     fetchSurveyData();
   }, []);
 

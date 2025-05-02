@@ -20,6 +20,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [dailyStatus, setDailyStatus] = useState(null);
   const router = useRouter();
+  const [generalSurvey, setGeneralSurvey] = useState(null);
 
   const saveExpoPushToken = async (token) => {
     const userId = await AsyncStorage.getItem("userId");
@@ -162,6 +163,8 @@ export default function HomeScreen() {
           );
           const survey = surveyResponse.data?.survey;
 
+          setGeneralSurvey(survey);
+
           await scheduleNotificationsForConsumptionTimes(
             survey?.consumptionTime || []
           );
@@ -277,8 +280,8 @@ export default function HomeScreen() {
             {/* 💡 הוסיפי את זה כאן */}
             {(() => {
               const isCoffeeSurveyMissing =
-                !user?.coffeeConsumption ||
-                Object.values(user.coffeeConsumption).every((value) =>
+                !generalSurvey ||
+                Object.values(generalSurvey).every((value) =>
                   Array.isArray(value) ? value.length === 0 : !value
                 );
 
@@ -336,7 +339,12 @@ export default function HomeScreen() {
                 </View>
               );
             })()}
-
+            <Button
+              title="שלח לי תזכורת עכשיו 🚀"
+              onPress={sendImmediateNotification}
+              color="#2196F3"
+              style={{ marginTop: 10 }}
+            />
             <TouchableOpacity onPress={handleLogout} style={styles.backLink}>
               <Text style={styles.linkText}>התנתקות מהחשבון</Text>
             </TouchableOpacity>
@@ -347,15 +355,6 @@ export default function HomeScreen() {
       </ScrollView>
     </View>
   );
-}
-
-{
-  /* <Button
-              title="שלח לי תזכורת עכשיו 🚀"
-              onPress={sendImmediateNotification}
-              color="#2196F3"
-              style={{ marginTop: 10 }}
-            /> */
 }
 
 const styles = StyleSheet.create({
@@ -379,7 +378,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   text: {
-    marginBottom: 15,
+    marginBottom: 20,
     fontSize: 16,
     textAlign: "right",
   },
@@ -394,14 +393,14 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     fontSize: 16,
     marginTop: 40,
-    textAlign: "left", 
+    textAlign: "left",
   },
   backLink: {
     marginTop: 0,
-    alignItems: "flex-start", 
+    alignItems: "flex-start",
     width: "100%",
   },
-  
+
   logoutButton: {
     position: "absolute",
     bottom: 0,

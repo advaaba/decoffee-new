@@ -15,9 +15,12 @@ import RadioGroup from "react-native-radio-buttons-group";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BASE_URL from "../../utils/apiConfig";
+import { useLocalSearchParams } from "expo-router";
 
-export default function CoffeeDetails({ isEditMode = false }) {
+export default function CoffeeDetails() {
   const router = useRouter();
+  const { editMode } = useLocalSearchParams();
+  const isEditMode = editMode === "true";
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
@@ -58,6 +61,55 @@ export default function CoffeeDetails({ isEditMode = false }) {
 
     fetchCoffeeTypes();
   }, []);
+  useEffect(() => {
+    const fetchExistingSurvey = async () => {
+      if (!isEditMode) return;
+
+      try {
+        const userId = await AsyncStorage.getItem("userId");
+        const response = await axios.get(
+          `${BASE_URL}/api/generalData/get-survey/${userId}`
+        );
+        const data = response.data.survey;
+
+        if (!data) return;
+
+        setCoffeeData({
+          coffeeType: data.coffeeType.map((c) => c.name),
+          consumptionTime: data.consumptionTime || [],
+        });
+
+        const newServingSizes = {};
+        const newCups = {};
+        data.coffeeType.forEach((c) => {
+          newServingSizes[c.name] = c.size;
+          newCups[c.name] = c.cups;
+        });
+
+        setServingSizesByType(newServingSizes);
+        setCupsByType(newCups);
+        setSelfDescription(data.selfDescription || "");
+        setIsWorking(data.isWorking);
+        setEffects(data.effects);
+        setIsTryingToReduce(data.isTryingToReduce);
+        setReductionExplanation(data.reductionExplanation || "");
+        setSleepFromHour(data.sleepFromHour);
+        setSleepToHour(data.sleepToHour);
+        setWorkStartHour(data.workStartHour);
+        setWorkEndHour(data.workEndHour);
+        setImportanceLevel(data.importanceLevel);
+        setIsMotivation(data.isMotivation || false);
+        setWorkingDays(data.workingDays || []);
+        setCustomDescription(
+          data.selfDescription === "other" ? data.customDescription : ""
+        );
+      } catch (err) {
+        console.error("❌ שגיאה בטעינת הסקירה לעריכה:", err);
+      }
+    };
+
+    fetchExistingSurvey();
+  }, [isEditMode]);
 
   const coffeeOptions = coffeeTypesFromDb.map((drink) => ({
     label: drink.name,
@@ -221,11 +273,10 @@ export default function CoffeeDetails({ isEditMode = false }) {
     value: i,
   }));
 
-  const averageCupsPerDay =
-    coffeeData.coffeeType.length > 0
-      ? Object.values(cupsByType).reduce((a, b) => a + b, 0) /
-        coffeeData.coffeeType.length
-      : 0;
+  const totalCupsPerDay = coffeeData.coffeeType.reduce(
+    (sum, item) => sum + (item.cups || 0),
+    0
+  );
 
   const timesPerDay = [
     { label: "בוקר", value: "Morning" },
@@ -315,8 +366,30 @@ export default function CoffeeDetails({ isEditMode = false }) {
       const structuredCoffeeTypes = coffeeData.coffeeType.map((type) => ({
         name: type,
         size: servingSizesByType[type] || null,
-        cups: cupsByType[type] || 0, // 👈 כל סוג מקבל את הכמות שלו
+        cups: cupsByType[type] || 0,
       }));
+      
+      const drinksWithCups = structuredCoffeeTypes.filter(
+        (drink) => typeof drink.cups === "number" && drink.cups > 0
+      );
+      
+      const averageCupsPerDay =
+        drinksWithCups.length > 0
+          ? drinksWithCups.reduce((sum, drink) => sum + drink.cups, 0) / drinksWithCups.length
+          : 0;
+      
+      const averageCaffeinePerDay = structuredCoffeeTypes.reduce((total, type) => {
+        const coffee = coffeeTypesFromDb.find((c) => c.value === type.name);
+        const userServingSize = parseFloat(type.size) || 0;
+        const cups = type.cups || 0;
+      
+        if (coffee && coffee.servingSizeMl && coffee.caffeineMg) {
+          const caffeinePerCup = (userServingSize / coffee.servingSizeMl) * coffee.caffeineMg;
+          return total + caffeinePerCup * cups;
+        }
+      
+        return total;
+      }, 0);      
 
       const userId = await AsyncStorage.getItem("userId");
       const finalData = {
@@ -344,9 +417,10 @@ export default function CoffeeDetails({ isEditMode = false }) {
       };
 
       const response = await axios.post(
-        `${BASE_URL}/api/auth/update-coffee-consumption/${userId}`,
+        `${BASE_URL}/api/generalData/update-survey/${userId}`,
         finalData.coffeeConsumption
       );
+
       console.log("📦 נתונים שנשלחים לשרת: ", finalData);
       console.log("✅ עדכון הצליח:", response.data);
 
@@ -494,7 +568,11 @@ export default function CoffeeDetails({ isEditMode = false }) {
             </View>
             <Text style={styles.text}>כמה ימים בשבוע את/ה עובד/ת?</Text>
             <MultiSelect
-              style={[styles.dropdown, errors.workingDays && styles.errorField,{ zIndex: 1000 }]}
+              style={[
+                styles.dropdown,
+                errors.workingDays && styles.errorField,
+                { zIndex: 1000 },
+              ]}
               data={daysOfWeek}
               labelField="label"
               valueField="value"
@@ -799,7 +877,6 @@ export default function CoffeeDetails({ isEditMode = false }) {
               {isEditMode ? "עדכן" : "סיום"}
             </Text>
           </TouchableOpacity>
-
         </View>
       </View>
     </ScrollView>

@@ -35,15 +35,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "center", // מרכז את כל הרכיבים
     backgroundColor: "#fff",
     padding: 20,
   },
+  
   title: {
     fontSize: 28,
     fontWeight: "bold",
     marginBottom: 20,
+    textAlign: "center",
+    alignSelf: "center", // מוסיף יישור בתוך ה-View
   },
+  
   subtitle: {
     fontSize: 18,
     marginBottom: 20,
