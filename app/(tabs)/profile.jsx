@@ -12,8 +12,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useRouter } from "expo-router";
-import { Picker } from "@react-native-picker/picker";
 import BASE_URL from "../../utils/apiConfig";
+import { Dropdown } from "react-native-element-dropdown";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -39,9 +39,9 @@ export default function Profile() {
         );
         if (response.data.success) {
           const birthDate = new Date(response.data.user.birthDate);
-          setDay(birthDate.getDate());
-          setMonth(birthDate.getMonth() + 1);
-          setYear(birthDate.getFullYear());
+          setDay(Number(birthDate.getDate()));
+          setMonth(Number(birthDate.getMonth() + 1));
+          setYear(Number(birthDate.getFullYear()));
 
           setUser(response.data.user);
           setEditedUser(response.data.user);
@@ -62,6 +62,20 @@ export default function Profile() {
   const handleFieldChange = (field, value) => {
     setEditedUser((prev) => ({ ...prev, [field]: value }));
   };
+  const days = Array.from({ length: 31 }, (_, i) => ({
+    label: `${i + 1}`,
+    value: i + 1,
+  }));
+
+  const months = Array.from({ length: 12 }, (_, i) => ({
+    label: `${i + 1}`,
+    value: i + 1,
+  }));
+
+  const years = Array.from({ length: 100 }, (_, i) => {
+    const year = new Date().getFullYear() - i;
+    return { label: `${year}`, value: year };
+  });
 
   const updateBirthDate = (newDay = day, newMonth = month, newYear = year) => {
     if (newDay && newMonth && newYear) {
@@ -157,55 +171,52 @@ export default function Profile() {
           <Text style={styles.label}>תאריך יום הולדת:</Text>
           {editMode ? (
             <View style={{ flexDirection: "row", gap: 10 }}>
-              {/* יום */}
-              <Picker
-                selectedValue={day?.toString()}
-                style={styles.picker}
-                onValueChange={(value) => {
-                  setDay(parseInt(value));
-                  updateBirthDate(parseInt(value), month, year);
-                }}
-              >
-                {[...Array(31)].map((_, i) => {
-                  const val = i + 1;
-                  return (
-                    <Picker.Item key={val} label={`${val}`} value={`${val}`} />
-                  );
-                })}
-              </Picker>
+                <Dropdown
+                  style={[styles.dropdown, { flex: 1 }]}
+                  data={days}
+                  labelField="label"
+                  valueField="value"
+                  value={day !== null ? Number(day) : null}
 
-              {/* חודש */}
-              <Picker
-                selectedValue={month?.toString()}
-                style={styles.picker}
-                onValueChange={(value) => {
-                  setMonth(parseInt(value));
-                  updateBirthDate(day, parseInt(value), year);
-                }}
-              >
-                {[...Array(12)].map((_, i) => {
-                  const val = i + 1;
-                  return (
-                    <Picker.Item key={val} label={`${val}`} value={`${val}`} />
-                  );
-                })}
-              </Picker>
-
-              {/* שנה */}
-              <Picker
-                selectedValue={year?.toString()}
-                style={styles.picker}
-                onValueChange={(value) => {
-                  setYear(parseInt(value));
-                  updateBirthDate(day, month, parseInt(value));
-                }}
-              >
-                {[...Array(100)].map((_, i) => {
-                  const y = new Date().getFullYear() - i;
-                  return <Picker.Item key={y} label={`${y}`} value={`${y}`} />;
-                })}
-              </Picker>
-            </View>
+                  onChange={(item) => {
+                    setDay(item.value);
+                    updateBirthDate(item.value, month, year);
+                  }}
+                  placeholder="יום"
+                  placeholderStyle={{ color: "#999" }}
+                  selectedTextStyle={{ color: "#000" }}
+                  search={false}
+                />
+                
+                <Dropdown
+                  style={[styles.dropdown, { flex: 1 }]}
+                  data={months}
+                  labelField="label"
+                  valueField="value"
+                  value={month !== null ? Number(day) : null}
+                  onChange={(item) => {
+                    setMonth(item.value);
+                    updateBirthDate(day, item.value, year);
+                  }}
+                  placeholder="חודש"
+                  placeholderStyle={{ color: "#999" }}
+                  selectedTextStyle={{ color: "#000" }}
+                />
+                <Dropdown
+                  style={[styles.dropdown, { flex: 1 }]}
+                  data={years}
+                  labelField="label"
+                  valueField="value"
+                  value={year !== null ? Number(day) : null}
+                  onChange={(item) => {
+                    setYear(item.value);
+                    updateBirthDate(day, month, item.value);
+                  }}
+                  placeholder="שנה"
+                  placeholderStyle={{ color: "#999" }}
+                  selectedTextStyle={{ color: "#000" }}
+                />
+              </View>
           ) : (
             <Text style={styles.value}>{formatDate(editedUser.birthDate)}</Text>
           )}
@@ -245,26 +256,27 @@ const InfoRow = ({ label, value, field, editMode, onChange }) => {
       <Text style={styles.label}>{label}:</Text>
       {editMode ? (
         isPickerField ? (
-          <Picker
-            selectedValue={value?.toString()} // להמיר תמיד למחרוזת
-            style={styles.picker}
-            onValueChange={(val) => onChange(field, parseInt(val))}
-          >
-            {field === "weight"
-              ? [...Array(121)].map((_, i) => {
-                  const val = 30 + i;
-                  return (
-                    <Picker.Item key={val} label={`${val} ק"ג`} value={`${val}`} />
-
-                  );
-                })
-              : [...Array(121)].map((_, i) => {
-                  const val = 100 + i;
-                  return (
-                    <Picker.Item key={val} label={`${val} ס"מ`} value={`${val}`} />
-                  );
-                })}
-          </Picker>
+          <Dropdown
+            data={
+              field === "weight"
+                ? [...Array(121)].map((_, i) => {
+                    const val = 30 + i;
+                    return { label: `${val} ק"ג`, value: val };
+                  })
+                : [...Array(121)].map((_, i) => {
+                    const val = 100 + i;
+                    return { label: `${val} ס"מ`, value: val };
+                  })
+            }
+            labelField="label"
+            valueField="value"
+            value={value}
+            onChange={(item) => onChange(field, item.value)}
+            style={styles.dropdown}
+            placeholder={`בחר ${label}`}
+            placeholderStyle={{ color: "#999" }}
+            selectedTextStyle={{ color: "#000" }}
+          />
         ) : (
           <TextInput
             style={styles.input}
@@ -346,5 +358,14 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  dropdown: {
+    height: 44,
+    borderColor: "#e2e8f0",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
+    marginBottom: 6,
   },
 });
