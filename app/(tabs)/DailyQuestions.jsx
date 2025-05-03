@@ -94,6 +94,22 @@ export default function DailyQuestions({ isEditMode, editParams }) {
     { id: "terrible", label: "נורא", value: "terrible" },
   ];
 
+  const focusLevels = [
+    { label: "מאוד מרוכז/ת", value: "very_focused" },
+    { label: "מרוכז/ת", value: "focused" },
+    { label: "בינוני/ת", value: "neutral" },
+    { label: "לא מרוכז/ת", value: "unfocused" },
+    { label: "קושי חמור להתרכז", value: "very_unfocused" },
+  ];
+  
+  const fatigueLevels = [
+  { label: "ערני/ת מאוד", value: "very_alert" },
+  { label: "ערני/ת", value: "alert" },
+  { label: "בינוני/ת", value: "neutral" },
+  { label: "עייף/ה", value: "tired" },
+  { label: "עייפות חמורה", value: "very_tired" },
+];
+
   const hoursOptions = Array.from({ length: 24 * 2 }, (_, i) => {
     const hour = Math.floor(i / 2);
     const minutes = (i % 2) * 30;
@@ -135,7 +151,7 @@ export default function DailyQuestions({ isEditMode, editParams }) {
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
         <Text style={styles.title}>סקירת הקפה היומי</Text>
-        <Text style={styles.label}>
+        <Text style={styles.Textparagraph}>
           עלייך למלא את כל השדות כדי לשלוח סקירה יומית מלאה
         </Text>
         {isEditMode && (
@@ -180,7 +196,7 @@ export default function DailyQuestions({ isEditMode, editParams }) {
         <Text style={styles.label}>מה רמת הריכוז שלך היום?</Text>
         <Dropdown
           style={[styles.dropdown]}
-          data={ratingOptions}
+          data={fatigueLevels}
           labelField="label"
           valueField="value"
           placeholder="בחרי רמת ריכוז"
@@ -193,7 +209,7 @@ export default function DailyQuestions({ isEditMode, editParams }) {
         <Text style={styles.label}>מה רמת העייפות שלך היום?</Text>
         <Dropdown
           style={[styles.dropdown]}
-          data={ratingOptions}
+          data={focusLevels}
           labelField="label"
           valueField="value"
           placeholder="בחרי רמת עייפות"
@@ -324,5 +340,10 @@ const styles = StyleSheet.create({
   selectedText: {
     textAlign: "right",
     color: "#333",
+  },
+  Textparagraph: {
+    textAlign: "center",
+    fontSize: 18,
+    color: "#184e77",
   },
 });

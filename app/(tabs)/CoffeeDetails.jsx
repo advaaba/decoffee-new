@@ -567,6 +567,7 @@ export default function CoffeeDetails() {
               />
             </View>
             <Text style={styles.text}>כמה ימים בשבוע את/ה עובד/ת?</Text>
+            <Text style={styles.textOption}>*בחירת אופציה מרובה</Text>
             <MultiSelect
               style={[
                 styles.dropdown,
@@ -602,6 +603,7 @@ export default function CoffeeDetails() {
           </>
         )}
         <Text style={styles.text}> באילו שעות ביום את/ה בדר״כ שותה קפה?</Text>
+        <Text style={styles.textOption}>*בחירת אופציה מרובה</Text>
         <MultiSelect
           style={[
             styles.dropdown,
@@ -638,7 +640,7 @@ export default function CoffeeDetails() {
           <Text style={{ color: "red" }}>{errors.consumptionTime}</Text>
         )}
         <Text style={styles.text}>
-          📌 האם שתיית הקפה משפיעה עליך רגשית / פיזית / שניהם?
+           האם שתיית הקפה משפיעה עליך רגשית / פיזית / שניהם?
         </Text>
         <Dropdown
           style={[styles.dropdown, errors.effects && styles.errorField]}
@@ -662,7 +664,7 @@ export default function CoffeeDetails() {
           <Text style={{ color: "red" }}>{errors.effects}</Text>
         )}
 
-        <Text style={styles.text}>📉 האם אתה מנסה להפחית צריכת קפה?</Text>
+        <Text style={styles.text}> האם אתה מנסה להפחית צריכת קפה?</Text>
         <RadioGroup
           radioButtons={yesNoOptions}
           onPress={(val) => {
@@ -681,7 +683,7 @@ export default function CoffeeDetails() {
         )}
         {isTryingToReduce === "yes" && (
           <View>
-            <Text style={styles.text}>📝 איך אתה מנסה להפחית צריכת קפה?</Text>
+            <Text style={styles.text}> איך אתה מנסה להפחית צריכת קפה?</Text>
             <TextInput
               placeholder="למשל: מחליף לקפה נטול, שותה תה במקום..."
               value={reductionExplanation}
@@ -706,7 +708,7 @@ export default function CoffeeDetails() {
           </View>
         )}
         <Text style={styles.text}>
-          📈 כמה חשוב לך לעקוב אחרי הרגלי צריכת הקפה שלך?
+           כמה חשוב לך לעקוב אחרי הרגלי צריכת הקפה שלך?
         </Text>
         <Dropdown
           style={[styles.dropdown, errors.importanceLevel && styles.errorField]}
@@ -729,7 +731,8 @@ export default function CoffeeDetails() {
         {errors.importanceLevels && (
           <Text style={{ color: "red" }}>{errors.importanceLevels}</Text>
         )}
-        <Text style={styles.text}>☕ סוגי קפה מועדפים:</Text>
+        <Text style={styles.text}> סוגי קפה מועדפים:</Text>
+        <Text style={styles.textOption}>*בחירת אופציה מרובה</Text>
         <MultiSelect
           style={[
             styles.dropdown,
@@ -775,10 +778,10 @@ export default function CoffeeDetails() {
         )}
         {coffeeData.coffeeType.length > 0 && (
           <View style={{ marginTop: 10 }}>
-            <Text style={styles.text}>📏 בחר/י מידת הגשה עבור כל סוג קפה:</Text>
+            <Text style={styles.text}> בחר/י מידת הגשה עבור כל סוג קפה:</Text>
             {coffeeData.coffeeType.map((name) => (
               <View key={name} style={{ marginVertical: 8 }}>
-                <Text style={{ marginBottom: 4 }}>
+                <Text style={{ marginBottom: 4, textAlign: "right", color: "gray" }}>
                   סוג:{" "}
                   {coffeeTypesFromDb.find((c) => c.value === name)?.name ||
                     name}
@@ -837,7 +840,7 @@ export default function CoffeeDetails() {
           <Text style={{ color: "red" }}>{errors.servingSizesByType}</Text>
         )}
         <Text style={styles.text}>
-          🔍 תבחר/י את המשפט שאת/ה הכי מזדהה איתו:
+           תבחר/י את המשפט שאת/ה הכי מזדהה איתו:
         </Text>
         <Dropdown
           style={[styles.dropdown, errors.selfDescription && styles.errorField]}
@@ -1007,4 +1010,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: "right",
   },
+  textOption: {
+    fontSize: 16,
+    textAlign: "right",
+    color: "#184e77",
+  }
 });

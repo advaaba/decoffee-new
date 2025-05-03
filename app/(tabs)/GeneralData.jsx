@@ -150,9 +150,7 @@ export default function GeneralData() {
 
         <Text style={styles.label}> תיאור אישי:</Text>
         <Text style={styles.value}>{surveyData.selfDescription}</Text>
-      </View>
-
-      <TouchableOpacity
+        <TouchableOpacity
         style={styles.button}
         onPress={() =>
           router.push({
@@ -163,6 +161,7 @@ export default function GeneralData() {
       >
         <Text style={styles.buttonText}>עריכת הסקירה</Text>
       </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -225,11 +224,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 6,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
   },
   
   buttonText: {

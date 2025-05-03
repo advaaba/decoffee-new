@@ -8,38 +8,52 @@ const moods = [
   { id: "bad", label: "רע" },
   { id: "terrible", label: "נורא" },
 ];
+const moodOptions = [
+  { label: "מצוין", id: "excellent" },
+  { label: "טוב", id: "good" },
+  { label: "בסדר", id: "okay" },
+  { label: " ירוד/ה", id: "low" },
+  { label: "רע", id: "bad" },
+  { label: "לחוץ/ה", id: "stressed" },
+  { label: "עצבני/ת", id: "irritated" },
+  { label: "שמח/ה", id: "happy" },
+  { label: "עצוב/ה", id: "sad" },
+];
 
 export default function MoodSelector({ onMoodSelect }) {
   const [selectedMood, setSelectedMood] = useState(null);
+  const [selectedMoods, setSelectedMoods] = useState([]);
+
   const [animations, setAnimations] = useState(
-    moods.reduce((acc, mood) => {
+    moodOptions.reduce((acc, mood) => {
       acc[mood.id] = new Animated.Value(1);
       return acc;
     }, {})
   );
 
   const handleSelect = (moodId) => {
-    setSelectedMood(moodId);
-    onMoodSelect && onMoodSelect(moodId);
-
+    const isSelected = selectedMoods.includes(moodId);
+    const updatedSelection = isSelected
+      ? selectedMoods.filter((id) => id !== moodId) // הסרה
+      : [...selectedMoods, moodId]; // הוספה
+  
+    setSelectedMoods(updatedSelection);
+    onMoodSelect && onMoodSelect(updatedSelection);
+  
     Animated.sequence([
-      Animated.spring(animations[moodId], {
-        toValue: 1.2,
-        useNativeDriver: true,
-      }),
-      Animated.spring(animations[moodId], {
-        toValue: 1,
-        useNativeDriver: true,
-      }),
+      Animated.spring(animations[moodId], { toValue: 1.2, useNativeDriver: true }),
+      Animated.spring(animations[moodId], { toValue: 1, useNativeDriver: true }),
     ]).start();
   };
+  
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>מה מצב הרוח שלך היום?
       </Text>
+      <Text style={styles.Text}>*ניתן לבחור כמה מצבי רוח</Text>
       <View style={styles.moodRow}>
-        {moods.map((mood) => (
+        {moodOptions.map((mood) => (
           <TouchableOpacity
             key={mood.id}
             onPress={() => handleSelect(mood.id)}
@@ -48,7 +62,7 @@ export default function MoodSelector({ onMoodSelect }) {
             <Animated.View
               style={[
                 styles.moodButton,
-                selectedMood === mood.id && styles.activeMood,
+                selectedMoods.includes(mood.id) && styles.activeMood,
                 { transform: [{ scale: animations[mood.id] }] },
               ]}
             >
@@ -99,5 +113,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
+  },
+  Text: {
+    fontSize: 16,
+    color: "#184e77",
+    marginBottom: 10,
   },
 });
