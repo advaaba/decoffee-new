@@ -355,7 +355,7 @@ export default function HomeScreen() {
                     </>
                   ) : (
                     <View style={styles.messageBlock}>
-                      <Text style={styles.text}>
+                      <Text style={styles.textMessage}> 
                         אין הודעות חדשות עבורך כרגע.
                       </Text>
                     </View>
@@ -461,4 +461,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  textMessage: {
+    fontSize: 16,
+    textAlign: "center",
+    color: "#4CAF50",
+    marginBottom: 10,
+  }
 });

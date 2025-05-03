@@ -4,7 +4,7 @@ const dailyDataSchema = new mongoose.Schema({
   userId: { type: String, required: true },
   date: { type: Date, default: Date.now },
   sleepHours: { type: Number },
-  mood: { type: String },
+  mood: { type: [String], default: [] },
   focusLevel: { type: String },
   tirednessLevel: { type: String },  
   drankCoffee: { type: Boolean },

@@ -196,7 +196,7 @@ export default function YesCoffeeToday({ onDataChange, generalData, entryId }) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>
-        🟢 שתית קפה היום – מעולה! נרשום את הנתונים
+         🔵 שתית קפה היום? בוא נבדוק למה
       </Text>
 
       <Text style={styles.label}>כמה כוסות קפה שתית היום?</Text>

@@ -4,7 +4,6 @@ import RadioGroup from "react-native-radio-buttons-group";
 import {
   View,
   Text,
-  Input,
   Button,
   StyleSheet,
   ScrollView,
@@ -196,7 +195,7 @@ export default function DailyQuestions({ isEditMode, editParams }) {
         <Text style={styles.label}>מה רמת הריכוז שלך היום?</Text>
         <Dropdown
           style={[styles.dropdown]}
-          data={fatigueLevels}
+          data={focusLevels}
           labelField="label"
           valueField="value"
           placeholder="בחרי רמת ריכוז"
@@ -209,7 +208,7 @@ export default function DailyQuestions({ isEditMode, editParams }) {
         <Text style={styles.label}>מה רמת העייפות שלך היום?</Text>
         <Dropdown
           style={[styles.dropdown]}
-          data={focusLevels}
+          data={fatigueLevels}
           labelField="label"
           valueField="value"
           placeholder="בחרי רמת עייפות"
@@ -344,6 +343,6 @@ const styles = StyleSheet.create({
   Textparagraph: {
     textAlign: "center",
     fontSize: 18,
-    color: "#184e77",
+     color: "#184e77",
   },
 });

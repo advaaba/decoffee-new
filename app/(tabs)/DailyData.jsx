@@ -43,7 +43,7 @@ export default function DailyData({ dailyData }) {
 
       {dailyData.drankCoffee && dailyData.coffeeDetails ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}> פרטי שתיית קפה:</Text>
+          <Text style={styles.sectionTitle}> 🔵 פרטי שתיית קפה:</Text>
           <Item label="מספר כוסות" value={dailyData.coffeeDetails.cups} />
           <Item
             label="סוגי קפה"
@@ -79,7 +79,7 @@ export default function DailyData({ dailyData }) {
         </View>
       ) : dailyData.noCoffeeDetails ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔵 לא שתה קפה:</Text>
+          <Text style={styles.sectionTitle}>🟢 לא שתה קפה:</Text>
           <Item
             label="איך הרגיש ללא קפה"
             value={dailyData.noCoffeeDetails.feltWithoutCoffee}

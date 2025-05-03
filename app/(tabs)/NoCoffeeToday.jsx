@@ -156,7 +156,7 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>🔵 לא שתית קפה היום – בואי נבין למה</Text>
+      <Text style={styles.title}>🟢 לא שתית קפה היום –  מעולה! </Text>
 
       <Text style={styles.label}>איך הרגשת בלי קפה?</Text>
       <TextInput
