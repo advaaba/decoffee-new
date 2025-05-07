@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const DailyData = require('../models/dailyData');
-const { createDailyEntry, getDailyEntryByDate, updateDailyEntry } = require('../controllers/dailyDataController');
+const { createDailyEntry, getDailyEntryByDate, updateDailyEntry, checkDailyEntryExists } = require('../controllers/dailyDataController');
 
 router.post('/', createDailyEntry);
 router.get('/by-date/:userId', getDailyEntryByDate);

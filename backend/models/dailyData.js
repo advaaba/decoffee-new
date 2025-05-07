@@ -12,4 +12,5 @@ const dailyDataSchema = new mongoose.Schema({
   noCoffeeDetails: { type: mongoose.Schema.Types.Mixed }, // נתונים גמישים אם לא שתה
 }, { timestamps: true });
 
-module.exports = mongoose.model('DailyData', dailyDataSchema);
+module.exports = mongoose.models.DailyData || mongoose.model('DailyData', dailyDataSchema);
+

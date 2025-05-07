@@ -1,5 +1,4 @@
-const DailyData = require('../models/dailyData');
-
+const DailyData = require("../models/dailyData");
 
 const createDailyEntry = async (req, res) => {
   try {
@@ -29,13 +28,24 @@ const createDailyEntry = async (req, res) => {
 
     await newEntry.save();
 
-    res.status(201).json({ success: true, message: "✅ נתוני היום נשמרו בהצלחה!", data: newEntry });
+    res
+      .status(201)
+      .json({
+        success: true,
+        message: "✅ נתוני היום נשמרו בהצלחה!",
+        data: newEntry,
+      });
   } catch (error) {
     console.error("❌ שגיאה בשמירת נתוני יומיום:", error);
-    res.status(500).json({ success: false, message: "❌ שגיאה בשמירה", error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "❌ שגיאה בשמירה",
+        error: error.message,
+      });
   }
 };
-
 
 const getDailyEntryByDate = async (req, res) => {
   const { userId } = req.params;
@@ -65,14 +75,46 @@ const updateDailyEntry = async (req, res) => {
     });
 
     if (!updatedEntry) {
-      return res.status(404).json({ success: false, message: "סקירה יומית לא נמצאה." });
+      return res
+        .status(404)
+        .json({ success: false, message: "סקירה יומית לא נמצאה." });
     }
 
-    res.status(200).json({ success: true, message: "✅ הסקירה עודכנה בהצלחה!", data: updatedEntry });
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "✅ הסקירה עודכנה בהצלחה!",
+        data: updatedEntry,
+      });
   } catch (error) {
     console.error("❌ שגיאה בעדכון הסקירה:", error);
-    res.status(500).json({ success: false, message: "שגיאה בעדכון הסקירה", error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "שגיאה בעדכון הסקירה",
+        error: error.message,
+      });
+  }
+};
+const checkDailyEntryExists = async (req, res) => {
+  try {
+    const { userId, date } = req.query;
+    const entry = await DailyData.findOne({ userId, date });
+
+    res.status(200).json({ exists: !!entry });
+  } catch (error) {
+    console.error("❌ שגיאה בבדיקת קיום סקירה יומית:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "שגיאה בבדיקה", error: error.message });
   }
 };
 
-module.exports = { createDailyEntry, getDailyEntryByDate, updateDailyEntry };
+module.exports = {
+  createDailyEntry,
+  getDailyEntryByDate,
+  updateDailyEntry,
+  checkDailyEntryExists,
+};

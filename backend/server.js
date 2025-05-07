@@ -2,48 +2,48 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const config = require('./config');
+// const helmet = require('helmet');
 
-const authRoutes = require('./routes/authRoutes');
-const drinkRoutes = require("./routes/drinkRoutes");
-const dailyDataRoutes = require("./routes/dailyDataRoutes");
-const generalDataRoutes = require("./routes/generalDataRoutes");
-
+// בדיקה מוקדמת
+if (!process.env.MONGO_URI) {
+  console.error("❌ לא הוגדר MONGO_URI בקובץ הסביבה");
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// 🔐 Middleware
 app.use(cors());
+// app.use(helmet());
 app.use(express.json());
 
+// 📦 ראוטים
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/drinks', require('./routes/drinkRoutes'));
+app.use('/api/dailyData', require('./routes/dailyDataRoutes'));
+app.use('/api/generalData', require('./routes/generalDataRoutes'));
+app.use('/api/pattern', require('./routes/patternRoutes'));
+app.use('/api/dailypattern', require('./routes/dailyPatternRoutes'));
 
-// שימוש בנתיבים
-app.use('/api/auth', authRoutes);
-app.use("/api/drinks", drinkRoutes);
-app.use("/api/dailyData", dailyDataRoutes);
-app.use("/api/generalData", generalDataRoutes);
-
-
-
-
-// בדיקת חיבור לשרת
+// 🧪 בדיקת חיות
 app.get('/', (req, res) => {
-    res.send('🚀 Server is running!');
+  res.send('🚀 Server is running!');
 });
 
-console.log("🔍 MONGO_URI בשימוש:", process.env.MONGO_URI);
-
-// חיבור ל-MongoDB
+// 🔗 חיבור למסד הנתונים
+console.log("🔍 מנסה להתחבר ל־MongoDB...");
 mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 })
-    .then(() => console.log('✅ MongoDB connected'))
-    .catch(err => console.error('❌ MongoDB connection error:', err));
+  .then(() => console.log('✅ MongoDB מחובר בהצלחה'))
+  .catch(err => {
+    console.error('❌ שגיאה בחיבור ל־MongoDB:', err);
+    process.exit(1);
+  });
 
-// הפעלת השרת
-// app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-app.listen(5000, '0.0.0.0', () => {
-    console.log("✅ Server running on port 5000");
+// ▶️ הפעלת השרת
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
