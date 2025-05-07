@@ -1,100 +1,125 @@
 // ExploreScreen.jsx
 import React from "react";
 import { useEffect, useState } from "react";
-import { ScrollView, Text, StyleSheet } from "react-native";
+import {
+  ScrollView,
+  Text,
+  StyleSheet,
+  Button,
+  View,
+  Alert,
+} from "react-native";
 import RadioGroup from "react-native-radio-buttons-group";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import BASE_URL from "../../utils/apiConfig";
-// import { analyzeInitialPattern } from "../../analysis/initialBehaviorModel";
+import * as tf from "@tensorflow/tfjs";
 
 export default function ExploreScreen() {
   const [insights, setInsights] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [relevanceAnswer, setRelevanceAnswer] = useState(null);
   const [appliedAnswer, setAppliedAnswer] = useState(null);
-
-  useEffect(() => {
-    const getAnalysis = async () => {
-      try {
-        const userId = await AsyncStorage.getItem("userId");
-        if (!userId) return;
-
-        const response = await axios.get(
-          `${BASE_URL}/api/auth/get-user/${userId}`
-        );
-
-        const storedData = await AsyncStorage.getItem("userData");
-        if (!storedData) return;
-        const userData = JSON.parse(storedData);
-
-        const averageCaffeinePerDay =
-          userData.coffeeConsumption?.averageCaffeinePerDay || 0;
-
-        const inputToModel = {
-          age: userData.age || 0,
-          averageCaffeinePerDay,
-          sleepDurationAverage:
-            userData.coffeeConsumption?.sleepDurationAverage || 0,
-          workDurationAverage:
-            userData.coffeeConsumption?.workDurationAverage || 0,
-          workStartHour: userData.coffeeConsumption?.workStartHour || 0,
-          workEndHour: userData.coffeeConsumption?.workEndHour || 0,
-          caffeineRecommendationMin: userData.caffeineRecommendationMin || 0,
-          caffeineRecommendationMax: userData.caffeineRecommendationMax || 0,
-          isTryingToReduce:
-            userData.coffeeConsumption?.isTryingToReduce === "yes",
-          isMotivation: userData.isMotivation ?? false,
-          selfDescription: userData.coffeeConsumption?.selfDescription || "",
-          activityLevel: userData.activityLevel || "None",
-          consumptionTime: userData.coffeeConsumption?.consumptionTime || [],
-          effects: userData.coffeeConsumption?.effects || "none",
-          isWorking: userData.coffeeConsumption?.isWorking || "no",
-        };
-
-        console.log("📤 שולחת בקשה לשרת עם:", inputToModel);
-
-        // const res = await axios.post(
-        //   `${BASE_URL}/api/prediction/analyze`,
-        //   inputToModel
-        // );
-
-        const res = await axios.post(
-          `${BASE_URL}/api/auth/get-insights/${userId}`
-        );
-        // setInsights(aiResponse.data.insights);
-        // setRecommendations(aiResponse.data.recommendations);
-        console.log("📥 התקבלה תגובה מהשרת:", res.data);
-
-        const analysisResult = res.data;
-        console.log("🎯 תוצאה מהשרת:", analysisResult);
-        setInsights([analysisResult.insight]);
-        setRecommendations([analysisResult.recommendation]);
-      } catch (error) {
-        console.error("❌ שגיאה בקבלת ניתוח מהשרת:", error.message);
-      }
-    };
-
-    getAnalysis();
-  }, []);
-
+  const [pattern, setPattern] = useState(null);
+  const [openaiResult, setOpenaiResult] = useState(null);
+  
   const yesNoMaybeOptions = [
     { id: "yes", label: "כן", value: "yes" },
     { id: "no", label: "לא", value: "no" },
     { id: "don't know", label: "לא יודע/ת", value: "don't know" },
   ];
+  useEffect(() => {
+    const analyzeAndFetch = async () => {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) return;
+
+      try {
+        // שליפת הנתונים
+        const userResponse = await axios.get(
+          `${BASE_URL}/api/auth/get-user/${userId}`
+        );
+        const generalResponse = await axios.get(
+          `${BASE_URL}/api/generaldata/get-survey/${userId}`
+        );
+        const user = userResponse.data.user;
+        const general = generalResponse.data.survey;
+
+        // בניית אובייקט לניתוח
+        const analysisInput = {
+          userId: user.userId,
+          averageCaffeinePerDay: general.averageCaffeinePerDay,
+          caffeineRecommendationMin: user.caffeineRecommendationMin,
+          caffeineRecommendationMax: user.caffeineRecommendationMax,
+          consumptionTime: general.consumptionTime,
+          sleepDurationAverage: general.sleepDurationAverage,
+        };
+
+        // שליחת הנתונים לניתוח ושמירה במסד
+        await axios.post(`${BASE_URL}/api/pattern/analyze`, analysisInput);
+
+        // לאחר מכן – שליפת התובנות וההמלצות שנשמרו
+        const response = await axios.get(
+          `${BASE_URL}/api/pattern/get-insights/${userId}`
+        );
+        const { insight, recommendation, pattern } = response.data;
+        setInsights(insight);
+        setRecommendations(recommendation);
+        setPattern(pattern);
+      } catch (err) {
+        console.error("❌ שגיאה במהלך ניתוח או שליפה:", err);
+      }
+    };
+
+    analyzeAndFetch();
+  }, []);
+
+  const handleSaveFeedback = async () => {
+    if (!relevanceAnswer || !appliedAnswer) {
+      Alert.alert("שגיאה", "נא למלא את שתי השאלות לפני שמירה");
+      return;
+    }
+
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+
+      // נניח שאת רוצה לשמור רק את ההמלצה הראשונה
+      const recommendationText = recommendations[0];
+
+      const response = await axios.put(
+        `${BASE_URL}/api/prediction/recommendations/${userId}/feedback`,
+        {
+          recommendationText,
+          relevance: relevanceAnswer,
+          applied: appliedAnswer,
+        }
+      );
+
+      Alert.alert("✅ הצלחה", response.data.message || "המשוב נשמר בהצלחה");
+    } catch (error) {
+      console.error("❌ שגיאה בשמירת המשוב:", error);
+      Alert.alert("❌ שגיאה", "אירעה שגיאה בעת שמירת המשוב");
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📊 תובנות:</Text>
-      {insights.map((text, idx) => (
-        <Text key={idx}>• {text}</Text>
+      <Text style={styles.title}>תובנות</Text>
+      {insights.map((text, index) => (
+        <Text key={index} style={styles.insightText}>
+          {text}
+        </Text>
       ))}
 
-      <Text style={styles.title}>🎯 המלצות:</Text>
-      {recommendations.map((text, idx) => (
-        <Text key={idx}>• {text}</Text>
+      <Text style={styles.title}>המלצות</Text>
+      {recommendations.map((rec, index) => (
+        <View key={index}>
+          <Text style={styles.recText}>{rec}</Text>
+        </View>
       ))}
+      <Text style={styles.title}> דפוס מזוהה</Text>
+      <Text style={{ textAlign: "center", marginBottom: 10 }}>
+        {pattern || "לא זוהה דפוס"}
+      </Text>
       <Text style={styles.label}>האם ההמלצה רלוונטית עבורך?</Text>
       <RadioGroup
         radioButtons={yesNoMaybeOptions}
@@ -110,6 +135,9 @@ export default function ExploreScreen() {
         layout="row"
       />
 
+      <View style={{ marginTop: 15 }}>
+        <Button title="שמור משוב" onPress={handleSaveFeedback} />
+      </View>
       {/* {caffeineMin !== null && caffeineMax !== null ? (
               <Text>
                 כמות הקפאין המומלצת עבורך: {caffeineMin} - {caffeineMax} מ"ג ביום (
@@ -119,7 +147,10 @@ export default function ExploreScreen() {
               <Text>טוען נתונים...</Text>
             )} */}
 
-      <Text style={styles.text}>היסטוריית תובנות & המלצות</Text>
+      <Text style={styles.title}>📚 היסטוריית תובנות והמלצות</Text>
+      <Text style={{ textAlign: "center" }}>
+        (בהמשך ניתן יהיה להציג כאן את ההיסטוריה)
+      </Text>
     </ScrollView>
   );
 }
@@ -147,6 +178,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginBottom: 4,
+    textAlign: "right",
+  },
+  insightText: {
+    fontSize: 18,
+    marginBottom: 10,
+    textAlign: "right",
+  },
+  recText: {
+    fontSize: 18,
+    marginBottom: 10,
     textAlign: "right",
   },
 });

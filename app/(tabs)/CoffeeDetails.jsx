@@ -42,6 +42,7 @@ export default function CoffeeDetails() {
   const [customDescription, setCustomDescription] = useState("");
   const [cupsByType, setCupsByType] = useState({});
   const [workingDays, setWorkingDays] = useState([]);
+  const [userFromStorage, setUserFromStorage] = useState(null);
 
   const [coffeeData, setCoffeeData] = useState({
     coffeeType: [],
@@ -67,6 +68,11 @@ export default function CoffeeDetails() {
 
       try {
         const userId = await AsyncStorage.getItem("userId");
+
+        const userDataRaw = await AsyncStorage.getItem("userData");
+        const parsedUser = JSON.parse(userDataRaw);
+        setUserFromStorage(parsedUser);
+
         const response = await axios.get(
           `${BASE_URL}/api/generalData/get-survey/${userId}`
         );
@@ -354,7 +360,8 @@ export default function CoffeeDetails() {
   };
 
   const handleRegister = async () => {
-    console.log("its clicked");
+  
+
     const hasErrors = checkValidate();
     if (hasErrors) {
       Alert.alert("שגיאה", "אנא תקנ/י את השדות המסומנים באדום");
@@ -362,34 +369,42 @@ export default function CoffeeDetails() {
     }
 
     try {
+      const userDataRaw = await AsyncStorage.getItem("userData");
+      const parsedUser = JSON.parse(userDataRaw);
+
       // מערך coffeeType עם מבנה של name + size + cups
       const structuredCoffeeTypes = coffeeData.coffeeType.map((type) => ({
         name: type,
         size: servingSizesByType[type] || null,
         cups: cupsByType[type] || 0,
       }));
-      
+
       const drinksWithCups = structuredCoffeeTypes.filter(
         (drink) => typeof drink.cups === "number" && drink.cups > 0
       );
-      
+
       const averageCupsPerDay =
         drinksWithCups.length > 0
-          ? drinksWithCups.reduce((sum, drink) => sum + drink.cups, 0) / drinksWithCups.length
+          ? drinksWithCups.reduce((sum, drink) => sum + drink.cups, 0) /
+            drinksWithCups.length
           : 0;
-      
-      const averageCaffeinePerDay = structuredCoffeeTypes.reduce((total, type) => {
-        const coffee = coffeeTypesFromDb.find((c) => c.value === type.name);
-        const userServingSize = parseFloat(type.size) || 0;
-        const cups = type.cups || 0;
-      
-        if (coffee && coffee.servingSizeMl && coffee.caffeineMg) {
-          const caffeinePerCup = (userServingSize / coffee.servingSizeMl) * coffee.caffeineMg;
-          return total + caffeinePerCup * cups;
-        }
-      
-        return total;
-      }, 0);      
+
+      const averageCaffeinePerDay = structuredCoffeeTypes.reduce(
+        (total, type) => {
+          const coffee = coffeeTypesFromDb.find((c) => c.value === type.name);
+          const userServingSize = parseFloat(type.size) || 0;
+          const cups = type.cups || 0;
+
+          if (coffee && coffee.servingSizeMl && coffee.caffeineMg) {
+            const caffeinePerCup =
+              (userServingSize / coffee.servingSizeMl) * coffee.caffeineMg;
+            return total + caffeinePerCup * cups;
+          }
+
+          return total;
+        },
+        0
+      );
 
       const userId = await AsyncStorage.getItem("userId");
       const finalData = {
@@ -421,8 +436,17 @@ export default function CoffeeDetails() {
         finalData.coffeeConsumption
       );
 
-      console.log("📦 נתונים שנשלחים לשרת: ", finalData);
-      console.log("✅ עדכון הצליח:", response.data);
+      // console.log("📦 נתונים שנשלחים לשרת: ", finalData);
+      // console.log("✅ עדכון הצליח:", response.data);
+
+      // const user = await axios.get(`${BASE_URL}/api/auth/get-user/${userId}`);
+      // const general = await axios.get(`${BASE_URL}/api/generalData/get-survey/${userId}`);
+      
+      // await axios.post(`${BASE_URL}/api/pattern/analyze`, {
+      //   userData: user.data,
+      //   generalData: general.data.survey,
+      // });
+      
 
       // ✅ הודעת הצלחה ואז ניתוב חזרה למסך הקודם
       // Alert.alert("הצלחה", "✅ הנתונים נשמרו בהצלחה!", [
@@ -640,7 +664,7 @@ export default function CoffeeDetails() {
           <Text style={{ color: "red" }}>{errors.consumptionTime}</Text>
         )}
         <Text style={styles.text}>
-           האם שתיית הקפה משפיעה עליך רגשית / פיזית / שניהם?
+          האם שתיית הקפה משפיעה עליך רגשית / פיזית / שניהם?
         </Text>
         <Dropdown
           style={[styles.dropdown, errors.effects && styles.errorField]}
@@ -708,7 +732,7 @@ export default function CoffeeDetails() {
           </View>
         )}
         <Text style={styles.text}>
-           כמה חשוב לך לעקוב אחרי הרגלי צריכת הקפה שלך?
+          כמה חשוב לך לעקוב אחרי הרגלי צריכת הקפה שלך?
         </Text>
         <Dropdown
           style={[styles.dropdown, errors.importanceLevel && styles.errorField]}
@@ -781,7 +805,9 @@ export default function CoffeeDetails() {
             <Text style={styles.text}> בחר/י מידת הגשה עבור כל סוג קפה:</Text>
             {coffeeData.coffeeType.map((name) => (
               <View key={name} style={{ marginVertical: 8 }}>
-                <Text style={{ marginBottom: 4, textAlign: "right", color: "gray" }}>
+                <Text
+                  style={{ marginBottom: 4, textAlign: "right", color: "gray" }}
+                >
                   סוג:{" "}
                   {coffeeTypesFromDb.find((c) => c.value === name)?.name ||
                     name}
@@ -839,9 +865,7 @@ export default function CoffeeDetails() {
         {errors.servingSizesByType && (
           <Text style={{ color: "red" }}>{errors.servingSizesByType}</Text>
         )}
-        <Text style={styles.text}>
-           תבחר/י את המשפט שאת/ה הכי מזדהה איתו:
-        </Text>
+        <Text style={styles.text}>תבחר/י את המשפט שאת/ה הכי מזדהה איתו:</Text>
         <Dropdown
           style={[styles.dropdown, errors.selfDescription && styles.errorField]}
           data={selfDescriptions}
@@ -1014,5 +1038,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "right",
     color: "#184e77",
-  }
+  },
 });

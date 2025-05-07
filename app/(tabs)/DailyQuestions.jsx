@@ -151,7 +151,7 @@ export default function DailyQuestions({ isEditMode, editParams }) {
       <View style={styles.container}>
         <Text style={styles.title}>סקירת הקפה היומי</Text>
         <Text style={styles.Textparagraph}>
-          עלייך למלא את כל השדות כדי לשלוח סקירה יומית מלאה
+          *עלייך למלא את כל השדות כדי לשלוח סקירה יומית מלאה!
         </Text>
         {isEditMode && (
           <View style={{ marginTop: 20 }}>
@@ -343,6 +343,6 @@ const styles = StyleSheet.create({
   Textparagraph: {
     textAlign: "center",
     fontSize: 18,
-     color: "#184e77",
+     color: "#4CAF50",
   },
 });

@@ -43,10 +43,9 @@ const getSurveyByUserId = async (req, res) => {
 
     const survey = await CoffeeSurvey.findOne({ userId });
 
+    // אם לא קיימת סקירה – מחזירים survey: null במקום שגיאה
     if (!survey) {
-      return res
-        .status(404)
-        .json({ success: false, message: "❌ סקירה לא נמצאה" });
+      return res.status(200).json({ success: true, survey: null });
     }
 
     res.status(200).json({ success: true, survey });
@@ -57,5 +56,6 @@ const getSurveyByUserId = async (req, res) => {
       .json({ success: false, message: "❌ שגיאה בשרת", error: error.message });
   }
 };
+
 
 module.exports = { updateCoffeeSurvey, getSurveyByUserId };

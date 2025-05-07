@@ -301,6 +301,7 @@ const HealthDetailsScreen = () => {
       console.log("✅ הרשמה הצליחה:", response.data);
       Alert.alert("הצלחה", "נרשמת בהצלחה!");
       await AsyncStorage.setItem("userId", response.data.user.userId);
+      await AsyncStorage.setItem("userData", JSON.stringify(response.data.user));
 
       router.push("/home-screen");
     } catch (error) {

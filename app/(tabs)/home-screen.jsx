@@ -51,12 +51,76 @@ export default function HomeScreen() {
       if (response.data.exists) {
         setDailyStatus("מילאת את הסקירה היומית!"); // אם מילא, הצג את המצב החיובי
       } else {
-        setDailyStatus("עוד לא התחלת לעקוב אחרי צריכת הקפה שלך היום."); // אם לא מילא, הצג הודעה שתעודד את המשתמש למלא
+        setDailyStatus("עוד לא התחלת לעקוב אחרי צריכת הקפה שלך היום:"); // אם לא מילא, הצג הודעה שתעודד את המשתמש למלא
       }
     } catch (error) {
       console.error("❌ שגיאה בבדיקת הסקירה היומית:", error);
     }
   };
+
+  const markRemindersScheduled = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    await AsyncStorage.setItem(`dailyRemindersScheduled_${today}`, "true");
+  };
+  
+  const checkIfRemindersScheduled = async () => {
+    const today = new Date().toISOString().split("T")[0];
+    return await AsyncStorage.getItem(`dailyRemindersScheduled_${today}`);
+  };
+
+  const scheduleHourlyReminders = async () => {
+    const intervals = [9, 11, 13, 15, 17, 19]; // שעות שבהן תישלח תזכורת
+  
+    for (let hour of intervals) {
+      const date = new Date();
+      date.setHours(hour, 0, 0, 0);
+  
+      if (date > new Date()) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "📋 תזכורת למעקב יומי",
+            body: "אל תשכח/י להזין את הסקירה היומית שלך ב־DeCoffee!",
+          },
+          trigger: { date },
+        });
+      }
+    }
+  
+    console.log("📅 תזכורות כל שעתיים הוגדרו");
+    await markRemindersScheduled();
+  };
+  
+  useFocusEffect(
+    useCallback(() => {
+      const refreshData = async () => {
+        await checkDailyData();
+  
+        try {
+          const userId = await AsyncStorage.getItem("userId");
+          const surveyResponse = await axios.get(
+            `${BASE_URL}/api/generalData/get-survey/${userId}`
+          );
+
+          const survey = surveyResponse.data?.survey;
+          setGeneralSurvey(survey);
+  
+          if (dailyStatus !== "מילאת את הסקירה היומית!") {
+            const alreadyScheduled = await checkIfRemindersScheduled();
+            if (!alreadyScheduled) {
+              await scheduleHourlyReminders();
+            } else {
+              console.log("🔁 תזכורות יומיות כבר הוגדרו היום");
+            }
+          }
+        } catch (error) {
+          console.error("❌ שגיאה בטעינת הסקירה הכללית:", error);
+        }
+      };
+  
+      refreshData();
+    }, [dailyStatus])
+  );
+  
   const handleMissedNotification = async (timeLabel, hour, minute) => {
     const today = new Date().toISOString().split("T")[0];
     const key = `notificationSent_${timeLabel}_${today}`;
@@ -322,7 +386,7 @@ export default function HomeScreen() {
                       {isCoffeeSurveyMissing && (
                         <View style={styles.messageBlock}>
                           <Text style={styles.text}>
-                            לא השלמת עדיין את הסקירה הכללית על הרגלי הקפה שלך.
+                            לא השלמת עדיין את הסקירה הכללית על הרגלי הקפה שלך:
                           </Text>
                           <View style={styles.buttonRightAlign}>
                             <TouchableOpacity
@@ -363,12 +427,12 @@ export default function HomeScreen() {
                 </View>
               );
             })()}
-            <Button
+            {/* <Button
               title="שלח לי תזכורת עכשיו 🚀"
               onPress={sendImmediateNotification}
               color="#2196F3"
               style={{ marginTop: 10 }}
-            />
+            /> */}
             <TouchableOpacity onPress={handleLogout} style={styles.backLink}>
               <Text style={styles.linkText}>התנתקות מהחשבון</Text>
             </TouchableOpacity>

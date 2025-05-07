@@ -40,6 +40,8 @@ const LoginScreen = () => {
         await AsyncStorage.setItem("authToken", response.data.token);
         Alert.alert("✅ התחברת בהצלחה!");
         await AsyncStorage.setItem("userId", response.data.user.userId);
+        await AsyncStorage.setItem("userData", JSON.stringify(response.data.user));
+
         console.log("🔎 response.data:", response.data);
 
         router.push("/home-screen");
