@@ -2,9 +2,12 @@ const { OpenAI } = require("openai");
 const DailyDataModel = require("../models/DailyData");
 const InsightModel = require("../models/Insight");
 const RecommendationModel = require("../models/Recommendation");
-const { analyzeDailyPattern } = require("../analysis/dailyPattern");
+const { traverseTree, dailyDecisionTree } = require("../analysis/dailyPattern");
+const GeneralDataModel = require("../models/GeneralData");
+const UserModel = require("../models/User");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
 
 exports.analyzeAndSaveDailyPattern = async (req, res) => {
   try {
@@ -15,26 +18,41 @@ exports.analyzeAndSaveDailyPattern = async (req, res) => {
     if (!dailyData) {
       return res.status(404).json({ success: false, error: "סקירה יומית לא נמצאה" });
     }
+    const generalData = await GeneralDataModel.findOne({ userId });
+    const user = await UserModel.findOne({ userId });
 
-    // ניתוח באלגוריתם שלך
-    const { pattern, insight, recommendation } = analyzeDailyPattern(dailyData);
+    
+    // 🔍 ניתוח באלגוריתם הלוגי שלך
+    const { traverseTree, dailyDecisionTree } = require("../analysis/dailyPattern");
+    const { pattern, insight, recommendation } = traverseTree(dailyDecisionTree, {
+      ...dailyData.toObject(),
+      generalData: generalData?.toObject?.() || {},
+      user: user?.toObject?.() || {},
+    });
+    
+    
 
-    // ניתוח GPT
-    let gptInsight = "";
-    let gptRecommendation = "";
-
+    // 🤖 בניית פרומפט ל־OpenAI
     const gptPrompt = `
 נתונים יומיים של משתמש:
-- מצב רוח: ${dailyData.mood}
-- עייפות: ${dailyData.tirednessLevel}
-- ריכוז: ${dailyData.focusLevel}
-- שינה: ${dailyData.sleepHours} שעות
+- מצב רוח: ${dailyData.mood || "לא צויין"}
+- עייפות: ${dailyData.tirednessLevel || "לא צויין"}
+- ריכוז: ${dailyData.focusLevel || "לא צויין"}
+- שינה: ${dailyData.sleepHours || "לא צויין"} שעות
 ${dailyData.drankCoffee
-  ? `- שתה קפה: כן | סוג: ${dailyData.coffeeDetails?.type} | סיבה: ${dailyData.coffeeDetails?.reason}`
-  : `- לא שתה קפה | סיבה: ${dailyData.noCoffeeDetails?.reason}`}
-    
-בהתבסס על הנתונים, תן תובנה פסיכולוגית קצרה והמלצה התנהגותית אחת לשיפור ההרגלים. כתוב בעברית.
+  ? `- שתה קפה: כן | סוג: ${dailyData.coffeeDetails?.type || "לא צויין"} | סיבה: ${dailyData.coffeeDetails?.reason || "לא צויינה"}`
+  : `- לא שתה קפה | סיבה: ${dailyData.noCoffeeDetails?.reason || "לא צויינה"}`}
+
+בהתבסס על הנתונים, כתוב תובנה פסיכולוגית אחת והמלצה התנהגותית אחת בלבד.
+פורמט הפלט:
+תובנה: ...
+המלצה: ...
+ענה בעברית בלבד.
 `;
+
+    // 🧠 ניתוח GPT
+    let gptInsight = "";
+    let gptRecommendation = "";
 
     try {
       const gptResponse = await openai.chat.completions.create({
@@ -43,33 +61,30 @@ ${dailyData.drankCoffee
         temperature: 0.3,
       });
 
-      const gptText = gptResponse.choices[0].message.content;
-      const match = gptText.match(/תובנה:([\s\S]*?)המלצה:([\s\S]*)/i);
+      const gptText = gptResponse.choices[0].message.content.trim();
+      const match = gptText.match(/תובנה:\s*(.+?)\s*המלצה:\s*(.+)/s);
       if (match) {
         gptInsight = match[1].trim();
         gptRecommendation = match[2].trim();
       } else {
-        gptInsight = gptText.trim(); // fallback: כל הטקסט כתובנה
+        gptInsight = gptText; // fallback
       }
-    } catch (gptErr) {
-      console.error("❌ שגיאה בשימוש ב־OpenAI:", gptErr);
+    } catch (err) {
+      console.error("❌ שגיאה בשימוש ב־OpenAI:", err.message);
     }
 
-    // שילוב בין שני המקורות
-    const finalInsight = `${insight} בנוסף, ${gptInsight}`;
-    const finalRecommendation = `${recommendation} בנוסף, ${gptRecommendation}`;
+    // 🧩 שילוב תובנות והמלצות
+    const finalInsight = `${insight}${gptInsight ? " בנוסף, " + gptInsight : ""}`;
+    const finalRecommendation = `${recommendation}${gptRecommendation ? " בנוסף, " + gptRecommendation : ""}`;
 
-    console.log("🧠 finalInsight:", finalInsight);
-    console.log("🎯 finalRecommendation:", finalRecommendation);
-
-    // שמירה למסד
+    // 💾 שמירה למסד הנתונים
     await InsightModel.findOneAndUpdate(
       { userId },
       {
         $push: {
           insights: [
             { text: insight, type: "daily", source: "algorithm" },
-            { text: gptInsight, type: "daily", source: "openai" },
+            ...(gptInsight ? [{ text: gptInsight, type: "daily", source: "openai" }] : []),
             { text: finalInsight, type: "daily", source: "combined" },
           ],
         },
@@ -85,7 +100,7 @@ ${dailyData.drankCoffee
         $push: {
           recommendations: [
             { text: recommendation, type: "daily", source: "algorithm" },
-            { text: gptRecommendation, type: "daily", source: "openai" },
+            ...(gptRecommendation ? [{ text: gptRecommendation, type: "daily", source: "openai" }] : []),
             { text: finalRecommendation, type: "daily", source: "combined" },
           ],
         },
@@ -95,6 +110,7 @@ ${dailyData.drankCoffee
       { upsert: true, new: true }
     );
 
+    // ✅ תגובה ללקוח
     res.status(200).json({
       success: true,
       pattern,
@@ -102,11 +118,12 @@ ${dailyData.drankCoffee
       recommendations: [{ text: finalRecommendation }],
     });
   } catch (error) {
-    console.error("❌ שגיאה באבחון יומי:", error);
+    console.error("❌ שגיאה באבחון דפוס יומי:", error);
     res.status(500).json({ success: false, error: "שגיאה באבחון הדפוס היומי" });
   }
 };
 
+// 📤 שליפה
 exports.getDailyInsightsAndRecommendations = async (req, res) => {
   try {
     const userId = String(req.params.userId);
@@ -114,17 +131,29 @@ exports.getDailyInsightsAndRecommendations = async (req, res) => {
     const insightDoc = await InsightModel.findOne({ userId });
     const recommendationDoc = await RecommendationModel.findOne({ userId });
 
-    const insights = (insightDoc?.insights || []).filter(
-      (i) => typeof i === "object" && i.type === "daily"
-    );
-
-    const recommendations = (recommendationDoc?.recommendations || []).filter(
-      (r) => typeof r === "object" && r.type === "daily"
-    );
+    const insights = (insightDoc?.insights || []).filter((i) => i.type === "daily");
+    const recommendations = (recommendationDoc?.recommendations || []).filter((r) => r.type === "daily");
 
     res.status(200).json({ insights, recommendations });
   } catch (error) {
     console.error("❌ שגיאה בשליפת נתוני דפוס יומי:", error);
-    res.status(500).json({ success: false, error: "שגיאה בשליפת הנתונים" });
+    res.status(500).json({ success: false, error: "שגיאה בשליפת התובנות או ההמלצות" });
+  }
+};
+
+exports.getDailyHistory = async (req, res) => {
+  try {
+    const userId = String(req.params.userId);
+
+    const insightDoc = await InsightModel.findOne({ userId });
+    const recommendationDoc = await RecommendationModel.findOne({ userId });
+
+    const insights = (insightDoc?.insights || []).filter((i) => i.type === "daily");
+    const recommendations = (recommendationDoc?.recommendations || []).filter((r) => r.type === "daily");
+
+    res.status(200).json({ insights, recommendations });
+  } catch (error) {
+    console.error("❌ שגיאה בשליפת היסטוריית תובנות יומיות:", error);
+    res.status(500).json({ success: false, error: "שגיאה בשליפה" });
   }
 };

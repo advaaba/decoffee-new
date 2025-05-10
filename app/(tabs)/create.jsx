@@ -62,9 +62,9 @@ export default function Create() {
       {isEditMode ? (
        <DailyQuestions isEditMode={true} editParams={params} /> //מצב עריכה
       ) : dailyData ? (
-        <DailyData dailyData={dailyData} /> // מצב הצגת נתונים יומיים
+        <DailyData dailyData={dailyData} /> 
       ) : (
-        <DailyQuestions isEditMode={false} /> // יצירת סקירה חדשה
+        <DailyQuestions isEditMode={false} /> 
       )}
     </View>
   );

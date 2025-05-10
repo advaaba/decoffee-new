@@ -16,14 +16,14 @@ export default function OpenScreen() {
       <Text style={styles.title}>ברוכים הבאים ל-DeCoffee</Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push("/login")} // ✅ תוקן
+        onPress={() => router.push("/login")} 
       >
         <Text style={styles.buttonText}> התחברות</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={[styles.button, styles.registerButton]}
-        onPress={() => router.push("/PersonalDetails")} // ✅ תוקן
+        onPress={() => router.push("/PersonalDetails")} 
       >
         <Text style={styles.buttonText}> הרשמה</Text>
       </TouchableOpacity>

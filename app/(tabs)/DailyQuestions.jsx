@@ -32,11 +32,8 @@ export default function DailyQuestions({ isEditMode, editParams }) {
   const initializedRef = useRef(false);
 
   useEffect(() => {
-  
     if (!initializedRef.current && isEditMode && params.entryId) {
       initializedRef.current = true;
-
-      // כל הטענת הנתונים הקיימת
       if (params.sleepFromHour)
         setSleepFromHour(parseFloat(params.sleepFromHour));
       if (params.sleepToHour) setSleepToHour(parseFloat(params.sleepToHour));
@@ -73,8 +70,7 @@ export default function DailyQuestions({ isEditMode, editParams }) {
   const exitEditMode = () => {
     router.replace("/(tabs)/create"); // מסיר את הפרמטרים מה-URL
   };
-  
-  
+
   const calculateDuration = (start, end) => {
     if (start == null || end == null) return 0;
     return end >= start ? end - start : 24 - start + end;
@@ -100,14 +96,14 @@ export default function DailyQuestions({ isEditMode, editParams }) {
     { label: "לא מרוכז/ת", value: "unfocused" },
     { label: "קושי חמור להתרכז", value: "very_unfocused" },
   ];
-  
+
   const fatigueLevels = [
-  { label: "ערני/ת מאוד", value: "very_alert" },
-  { label: "ערני/ת", value: "alert" },
-  { label: "בינוני/ת", value: "neutral" },
-  { label: "עייף/ה", value: "tired" },
-  { label: "עייפות חמורה", value: "very_tired" },
-];
+    { label: "ערני/ת מאוד", value: "very_alert" },
+    { label: "ערני/ת", value: "alert" },
+    { label: "בינוני/ת", value: "neutral" },
+    { label: "עייף/ה", value: "tired" },
+    { label: "עייפות חמורה", value: "very_tired" },
+  ];
 
   const hoursOptions = Array.from({ length: 24 * 2 }, (_, i) => {
     const hour = Math.floor(i / 2);
@@ -242,21 +238,20 @@ export default function DailyQuestions({ isEditMode, editParams }) {
 
         {isDrinking === "yes" && (
           <YesCoffeeToday
-          generalData={{
-            sleepFromHour,
-            sleepToHour,
-            sleepDurationAverage,
-            mood,
-            focusLevel,
-            tirednessLevel,
-          }}
-          entryId={params?.entryId} // 👈 הוסיפי את זה
-          onDataChange={({ data, isValid }) => {
-            setYesCoffeeData(data);
-            setYesCoffeeValid(isValid);
-          }}
-        />
-        
+            generalData={{
+              sleepFromHour,
+              sleepToHour,
+              sleepDurationAverage,
+              mood,
+              focusLevel,
+              tirednessLevel,
+            }}
+            entryId={params?.entryId} // 👈 הוסיפי את זה
+            onDataChange={({ data, isValid }) => {
+              setYesCoffeeData(data);
+              setYesCoffeeValid(isValid);
+            }}
+          />
         )}
 
         {isDrinking === "no" && (
@@ -269,7 +264,7 @@ export default function DailyQuestions({ isEditMode, editParams }) {
               focusLevel,
               tirednessLevel,
             }}
-            entryId={params?.entryId} 
+            entryId={params?.entryId}
             onDataChange={({ data, isValid }) => {
               setNoCoffeeData(data);
               setNoCoffeeValid(isValid);
@@ -343,6 +338,6 @@ const styles = StyleSheet.create({
   Textparagraph: {
     textAlign: "center",
     fontSize: 18,
-     color: "#4CAF50",
+    color: "#4CAF50",
   },
 });

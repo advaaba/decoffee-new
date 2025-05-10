@@ -23,13 +23,12 @@ export default function PasswordRecovery() {
     }
 
     try {
-      // שליחה לשרת לבדיקה אם אימייל ות"ז קיימים
       const response = await axios.post(`${BASE_URL}/api/auth/checkUser`, { email, userId });
       if (response.data.success) {
         Alert.alert("✅ נמצא משתמש", "מעבר לאיפוס סיסמה.");
         router.push({
           pathname: "/PasswordChange",
-          params: { email }, // שולחים את האימייל איתנו למסך הבא
+          params: { email }, 
         });
       } else {
         Alert.alert("❌ שגיאה", "לא נמצא משתמש עם הפרטים שהוזנו.");

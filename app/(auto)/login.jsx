@@ -35,8 +35,6 @@ const LoginScreen = () => {
 
       if (response.data.success && response.data.token) {
         console.log("🔑 טוקן שהתקבל:", response.data.token);
-
-        // שמירת הטוקן ב- AsyncStorage
         await AsyncStorage.setItem("authToken", response.data.token);
         Alert.alert("✅ התחברת בהצלחה!");
         await AsyncStorage.setItem("userId", response.data.user.userId);

@@ -172,20 +172,6 @@ export default function CoffeeDetails() {
     return Object.keys(newErrors).length > 0;
   };
 
-  // בדיקת צריכת קפאין יומית
-  const averageCaffeinePerDay = coffeeData.coffeeType.reduce((total, type) => {
-    const coffee = coffeeTypesFromDb.find((c) => c.value === type);
-    const userServingSize = parseFloat(servingSizesByType[type]) || 0;
-    const cups = cupsByType[type] || 0;
-
-    if (coffee && coffee.servingSizeMl && coffee.caffeineMg) {
-      const caffeinePerCup =
-        (userServingSize / coffee.servingSizeMl) * coffee.caffeineMg;
-      return total + caffeinePerCup * cups;
-    }
-
-    return total;
-  }, 0);
 
   const daysOfWeek = [
     { id: "sun", label: "ראשון", value: "Sunday" },
@@ -207,19 +193,17 @@ export default function CoffeeDetails() {
     });
   };
 
-  //חישוב משך
+
   const calculateDuration = (start, end) => {
     if (start == null || end == null) return 0;
     return end >= start ? end - start : 24 - start + end;
   };
 
-  //משך זמן שינה
   const sleepDurationAverage = useMemo(
     () => calculateDuration(sleepFromHour, sleepToHour),
     [sleepFromHour, sleepToHour]
   );
 
-  //משך זמן עבודה
   const workDurationAverage = useMemo(
     () => calculateDuration(workStartHour, workEndHour),
     [workStartHour, workEndHour]
@@ -360,8 +344,6 @@ export default function CoffeeDetails() {
   };
 
   const handleRegister = async () => {
-  
-
     const hasErrors = checkValidate();
     if (hasErrors) {
       Alert.alert("שגיאה", "אנא תקנ/י את השדות המסומנים באדום");
@@ -398,7 +380,8 @@ export default function CoffeeDetails() {
           if (coffee && coffee.servingSizeMl && coffee.caffeineMg) {
             const caffeinePerCup =
               (userServingSize / coffee.servingSizeMl) * coffee.caffeineMg;
-            return total + caffeinePerCup * cups;
+              return Math.round((total + caffeinePerCup * cups) * 100) / 100;
+              ;
           }
 
           return total;
@@ -430,34 +413,20 @@ export default function CoffeeDetails() {
           workingDays,
         },
       };
-
-      const response = await axios.post(
+      //
+      await axios.post(
         `${BASE_URL}/api/generalData/update-survey/${userId}`,
         finalData.coffeeConsumption
       );
 
-      // console.log("📦 נתונים שנשלחים לשרת: ", finalData);
-      // console.log("✅ עדכון הצליח:", response.data);
+      await axios.post(`${BASE_URL}/api/pattern/analyze`, {
+        userId,
+        data: finalData.coffeeConsumption
+      });      
 
-      // const user = await axios.get(`${BASE_URL}/api/auth/get-user/${userId}`);
-      // const general = await axios.get(`${BASE_URL}/api/generalData/get-survey/${userId}`);
-      
-      // await axios.post(`${BASE_URL}/api/pattern/analyze`, {
-      //   userData: user.data,
-      //   generalData: general.data.survey,
-      // });
-      
-
-      // ✅ הודעת הצלחה ואז ניתוב חזרה למסך הקודם
-      // Alert.alert("הצלחה", "✅ הנתונים נשמרו בהצלחה!", [
-      //   {
-      //     text: "אוקיי",
-      //     onPress: () => {
       resetForm();
+      
       router.push("/coffee");
-      //     },
-      //   },
-      // ]);
     } catch (err) {
       console.error("❌ שגיאה בעדכון המשתמש:", err);
     }
@@ -491,9 +460,6 @@ export default function CoffeeDetails() {
             placeholderStyle={styles.placeholderText}
             selectedTextStyle={styles.selectedText}
           />
-          {/* {errors.sleepToHour && (
-            <Text style={{ color: "red" }}>{errors.sleepToHour}</Text>
-          )} */}
 
           <Dropdown
             style={[
@@ -517,9 +483,6 @@ export default function CoffeeDetails() {
             placeholderStyle={styles.placeholderText}
             selectedTextStyle={styles.selectedText}
           />
-          {/* {errors.sleepFromHour && (
-            <Text style={{ color: "red" }}>{errors.sleepFromHour}</Text>
-          )} */}
         </View>
         <Text style={styles.text}> האם אתה בשגרת עבודה?</Text>
         <RadioGroup
@@ -542,9 +505,6 @@ export default function CoffeeDetails() {
           <>
             <Text style={styles.text}> מהן שעות העבודה שלך?</Text>
             <View style={styles.sleepTimeRow}>
-              {/* {errors.workStartHour && (
-                <Text style={{ color: "red" }}>{errors.workStartHour}</Text>
-              )} */}
               <Dropdown
                 style={[
                   styles.dropdown,
@@ -607,7 +567,7 @@ export default function CoffeeDetails() {
                 setWorkingDays(item);
                 setErrors((prev) => {
                   const updated = { ...prev };
-                  delete updated.workingDays; // ✅ מחיקת השגיאה ברגע שיש שינוי
+                  delete updated.workingDays;
                   return updated;
                 });
               }}

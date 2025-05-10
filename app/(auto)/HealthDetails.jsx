@@ -6,7 +6,7 @@ import {
   Text,
   ScrollView,
   Alert,
-  TextInput
+  TextInput,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -183,10 +183,9 @@ const HealthDetailsScreen = () => {
     const min = weight * 3;
     const max = weight * 6;
     const averageCaffeineRecommendation = (min + max) / 2;
-  
+
     return { min, max, averageCaffeineRecommendation };
   };
-  
 
   const calculateAge = (year, month, day) => {
     if (!year || !month || !day) return null;
@@ -220,14 +219,6 @@ const HealthDetailsScreen = () => {
   };
 
   const handleContinue = async () => {
-    console.log("help");
-    console.log("is form valid?", isFormValid());
-    console.log("healthData", healthData);
-    console.log("custom fields", {
-      customHealthDescription,
-      customDietaryPreference,
-      selectedId,
-    });
     if (!validateForm()) return;
     if (!isFormValid()) {
       const missingFields = [];
@@ -267,7 +258,6 @@ const HealthDetailsScreen = () => {
         missingFields.push("customDietaryPreference");
       }
 
-      console.log("🚨 שדות חסרים:", missingFields);
       Alert.alert("שגיאה", "אנא מלאי את כל השדות לפני המשך.");
       return;
     }
@@ -283,7 +273,8 @@ const HealthDetailsScreen = () => {
       pregnant: healthData.gender === "Female" ? selectedId : null,
       caffeineRecommendationMin: caffeineRecommendation.min,
       caffeineRecommendationMax: caffeineRecommendation.max,
-      averageCaffeineRecommendation: caffeineRecommendation.averageCaffeineRecommendation,
+      averageCaffeineRecommendation:
+        caffeineRecommendation.averageCaffeineRecommendation,
       birthDate,
       customHealthDescription:
         healthData.healthCondition === "otherHealthConditions"
@@ -297,11 +288,17 @@ const HealthDetailsScreen = () => {
     console.log("📩 שולחת נתונים לשרת:", finalData);
 
     try {
-       const response = await axios.post(`${BASE_URL}/api/auth/register`,finalData);
+      const response = await axios.post(
+        `${BASE_URL}/api/auth/register`,
+        finalData
+      );
       console.log("✅ הרשמה הצליחה:", response.data);
       Alert.alert("הצלחה", "נרשמת בהצלחה!");
       await AsyncStorage.setItem("userId", response.data.user.userId);
-      await AsyncStorage.setItem("userData", JSON.stringify(response.data.user));
+      await AsyncStorage.setItem(
+        "userData",
+        JSON.stringify(response.data.user)
+      );
 
       router.push("/home-screen");
     } catch (error) {
@@ -451,10 +448,10 @@ const HealthDetailsScreen = () => {
           <Text style={styles.errorText}>{errors.customDietaryPreference}</Text>
         )}
         <Button
-          title="המשך"
+          title="סיום הרשמה"
           onPress={handleContinue}
           color="#4CAF50"
-          
+
           // disabled={!isFormValid()}
         />
       </View>
@@ -463,7 +460,7 @@ const HealthDetailsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: { flexGrow: 1, paddingBottom: 20 ,   backgroundColor: "#fff",},
+  scrollContainer: { flexGrow: 1, paddingBottom: 20, backgroundColor: "#fff" },
   container: { flex: 1, justifyContent: "center", padding: 20 },
   title: {
     fontSize: 28,

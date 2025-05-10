@@ -25,9 +25,9 @@ const PersonalDetailsScreen = () => {
     phoneNumber: "",
   });
 
-  // ✅ בדיקת תקינות תעודת זהות ישראלית
+ 
   const validateIsraeliID = (id) => {
-    if (!/^\d{9}$/.test(id)) return false; // רק 9 ספרות
+    if (!/^\d{9}$/.test(id)) return false; 
     let sum = 0;
     for (let i = 0; i < 9; i++) {
       let num = parseInt(id[i]) * ((i % 2) + 1);
@@ -36,13 +36,10 @@ const PersonalDetailsScreen = () => {
     return sum % 10 === 0;
   };
 
-  // ✅ בדיקת מספר טלפון ישראלי
   const validatePhoneNumber = (phone) => /^05\d{8}$/.test(phone);
 
-  // ✅ בדיקת אימייל
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  // 🔄 פונקציה לבדיקת הטופס
   const validateForm = () => {
     let newErrors = {};
 
@@ -70,7 +67,6 @@ const PersonalDetailsScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // 📝 פונקציה לעדכון שדות ומחיקת שגיאות
   const handleInputChange = (key, value) => {
     setFormData({ ...formData, [key]: value });
 
@@ -79,21 +75,21 @@ const PersonalDetailsScreen = () => {
     }
   };
 
-  // ⚠️ הצגת הודעת שגיאה במודל
   const showAlert = (message) => {
     setModalMessage(message);
     setModalVisible(true);
   };
 
-  // 🔄 ניהול מעבר למסך הבא
+ 
   const handleContinue = () => {
     if (!validateForm()) {
       showAlert("❌ אנא תקני את השדות המסומנים לפני המעבר.");
       return;
     }
     console.log(formData);
-    router.push({ pathname: "/HealthDetails", params: formData }); // 👈 שולחים את הנתונים ל-HealthDetails
+    router.push({ pathname: "/HealthDetails", params: formData }); 
   };
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
@@ -163,7 +159,6 @@ const PersonalDetailsScreen = () => {
           <Text style={styles.buttonText}>המשך</Text>
         </TouchableOpacity>
 
-        {/* ✅ מודל מתוקן למניעת שגיאות */}
         <Modal visible={modalVisible} transparent animationType="slide">
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>

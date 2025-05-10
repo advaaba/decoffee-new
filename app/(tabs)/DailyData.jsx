@@ -16,7 +16,7 @@ export default function DailyData({ dailyData }) {
         mood: dailyData.mood,
         focusLevel: dailyData.focusLevel,
         tirednessLevel: dailyData.tirednessLevel,
-        drankCoffee: dailyData.drankCoffee.toString(), // תמיד מחרוזת!
+        drankCoffee: dailyData.drankCoffee.toString(), 
         ...(dailyData.drankCoffee
           ? { coffeeDetails: JSON.stringify(dailyData.coffeeDetails) }
           : { noCoffeeDetails: JSON.stringify(dailyData.noCoffeeDetails) }),

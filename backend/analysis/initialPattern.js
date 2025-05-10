@@ -1,97 +1,139 @@
 const decisionTree = {
-    question: (user) => user.averageCaffeinePerDay < user.caffeineRecommendationMin,
+  question: (user) => user.pregnant === "yes" && user.averageCaffeinePerDay > 200,
+  yes: {
+    leaf: "pregnancy_limit_exceeded"
+  },
+  no: {
+    question: (user) => user.averageCaffeinePerDay > user.weight * 3,
     yes: {
-      question: (user) => user.consumptionTime.includes("Morning"),
+      question: (user) => user.activityLevel === "Sedentary",
       yes: {
-        leaf: "morning_drinker"
+        leaf: "compensating_lifestyle"
       },
       no: {
-        leaf: "balanced"
-      }
-    },
-    no: {
-      question: (user) => user.sleepDurationAverage < 6,
-      yes: {
-        question: (user) => user.averageCaffeinePerDay > user.caffeineRecommendationMax,
+        question: (user) => user.sleepDurationAverage < 6,
         yes: {
           leaf: "fatigue_based"
         },
         no: {
-          leaf: "stress_drinker"
+          question: (user) => user.effects === "both" || user.effects === "mentally",
+          yes: {
+            leaf: "stress_drinker"
+          },
+          no: {
+            leaf: "high_intake"
+          }
         }
+      }
+    },
+    no: {
+      question: (user) => user.healthCondition !== "Healthy" && user.averageCaffeinePerDay > user.caffeineRecommendationMin,
+      yes: {
+        leaf: "health_risk"
       },
       no: {
-        question: (user) => user.consumptionTime.length >= 2,
+        question: (user) => user.averageCaffeinePerDay < user.caffeineRecommendationMin,
         yes: {
-          leaf: "habitual"
+          question: (user) => user.consumptionTime.includes("Morning") && user.selfDescription.includes("להתעורר"),
+          yes: {
+            leaf: "morning_drinker"
+          },
+          no: {
+            leaf: "balanced"
+          }
         },
         no: {
-          leaf: "unknown"
+          question: (user) => user.consumptionTime.length >= 2,
+          yes: {
+            question: (user) => user.isTryingToReduce === "yes",
+            yes: {
+              leaf: "trying_to_reduce"
+            },
+            no: {
+              leaf: "habitual"
+            }
+          },
+          no: {
+            leaf: "balanced"
+          }
         }
       }
     }
-  };
-
-  const insightsAndRecommendations = {
-    morning_drinker: {
-      insight: "את/ה מתחיל/ה את היום עם קפה – אפשר לנסות טקס בוקר אחר כמו תה או הליכה קלה.",
-      recommendation: "שלבי חלופה כמו תה ירוק כדי להפחית תלות בקפאין."
-    },
-    fatigue_based: {
-      insight: "נראה שאת/ה שותה קפה בגלל עייפות – כדאי לבדוק את איכות השינה.",
-      recommendation: "הקפד/י על שינה מספקת ושתה/י קפה רק בשעות הבוקר."
-    },
-    stress_drinker: {
-      insight: "הקפה עוזר לך להתמודד עם לחץ – נסי לנשום עמוק או לצאת להליכה.",
-      recommendation: "שקול/י לתרגל טכניקות הרפיה במקום שתייה."
-    },
-    habitual: {
-      insight: "הקפה אצלך הוא הרגל – אולי את/ה לא באמת צריך/ה אותו כל פעם.",
-      recommendation: "החלף/י לפחות אחת מהכוסות במים או תה ללא קפאין."
-    },
-    balanced: {
-      insight: "צריכת הקפה שלך מאוזנת – כל הכבוד!",
-      recommendation: "המשיכ/י להקשיב לגוף ולשמור על הרגלים בריאים."
-    },
-    unknown: {
-      insight: "לא זוהה דפוס ברור.",
-      recommendation: "המשיכ/י לעקוב אחר ההרגלים כדי להבין מה משפיע עליך."
-    }
-  };
-  const patternTranslations = {
-    morning_drinker: "שותה קפה בבוקר",
-    fatigue_based: "שותה בגלל עייפות",
-    stress_drinker: "שותה בגלל לחץ",
-    habitual: "שתייה מתוך הרגל",
-    balanced: "צריכה מאוזנת",
-    unknown: "לא זוהה דפוס"
-  };
-  
-  function evaluateDecisionTree(tree, user) {
-    if (tree.leaf) return tree.leaf;
-  
-    if (tree.question(user)) {
-      return evaluateDecisionTree(tree.yes, user);
-    } else {
-      return evaluateDecisionTree(tree.no, user);
-    }
   }
+};
+
+const insightsAndRecommendations = {
+  pregnancy_limit_exceeded: {
+    insight: "את בהריון וצריכת הקפאין שלך גבוהה מהמומלץ.",
+    recommendation: "הקפידי לא לעבור 200 מ\"ג ביום – זה חשוב להתפתחות העובר."
+  },
+  compensating_lifestyle: {
+    insight: "נראה כי הקפה משמש כפיצוי על חוסר פעילות.",
+    recommendation: "נסי להוסיף תנועה יומית – אפילו הליכה קצרה – במקום להסתמך על קפאין."
+  },
+  health_risk: {
+    insight: "את/ה עם רקע רפואי שדורש הגבלת קפאין.",
+    recommendation: "התייעץ/י עם רופא לגבי כמות הקפאין שמתאימה למצבך הרפואי."
+  },
+  morning_drinker: {
+    insight: "את/ה שותה קפה בעיקר כדי להתעורר בבוקר.",
+    recommendation: "נסה/י טקס בוקר אלטרנטיבי – הליכה קצרה, שתיית מים, נשימות עמוקות."
+  },
+  fatigue_based: {
+    insight: "הקפה משמש כפיצוי על חוסר שינה.",
+    recommendation: "הקפד/י על שינה איכותית של לפחות 7 שעות ונסה/י לדחות את הקפה לאחר הארוחה."
+  },
+  stress_drinker: {
+    insight: "הקפה נצרך בעיקר במצבי מתח או עומס רגשי.",
+    recommendation: "שלב/י הרפיה יומית – נשימות, מדיטציה או פעילות מרגיעה."
+  },
+  high_intake: {
+    insight: "צריכת הקפאין שלך גבוהה מהמומלץ לפי המשקל שלך.",
+    recommendation: (user) => `למשקל של ${user.weight} ק\"ג, ההמלצה היא עד ${user.weight * 3} מ\"ג ביום. נסה/י להפחית את הכמות בהדרגה.`
+  },
+  habitual: {
+    insight: "נראה שמדובר בשתייה מתוך שגרה ולא בהכרח צורך ממשי.",
+    recommendation: "בחר/י לפחות יום אחד בשבוע להפחתה יזומה או שתיית חלופה."
+  },
+  trying_to_reduce: {
+    insight: "את/ה בתהליך הפחתה בצריכת קפה.",
+    recommendation: "הגדר/י יעד יומי חדש והשתמש/י באפליקציה למעקב שוטף."
+  },
+  balanced: {
+    insight: "צריכת הקפה שלך נמצאת בטווח התקין ומתאימה לאורח החיים שלך.",
+    recommendation: "המשיכ/י לשים לב להשפעות אישיות ולשמור על מודעות."
+  }
+};
+
+const patternTranslations = {
+  pregnancy_limit_exceeded: "חריגה בהריון",
+  compensating_lifestyle: "פיצוי על חוסר תנועה",
+  health_risk: "סיכון בריאותי",
+  morning_drinker: "שותה קפה בבוקר כדי להתעורר",
+  fatigue_based: "שתייה עקב עייפות",
+  stress_drinker: "שתייה עקב מתח",
+  high_intake: "צריכה גבוהה לפי משקל",
+  habitual: "שתייה מתוך הרגל",
+  trying_to_reduce: "מנסה להפחית צריכה",
+  balanced: "צריכה מאוזנת"
+};
+
+function evaluateDecisionTree(tree, user) {
+  if (tree.leaf) return tree.leaf;
+  if (tree.question(user)) {
+    return evaluateDecisionTree(tree.yes, user);
+  } else {
+    return evaluateDecisionTree(tree.no, user);
+  }
+}
 
 function runInitialAnalysis(user) {
-  console.log("🧪 בדיקת נתוני משתמש:", {
-    avg: user.averageCaffeinePerDay,
-    min: user.caffeineRecommendationMin,
-    max: user.caffeineRecommendationMax,
-    times: user.consumptionTime,
-    sleep: user.sleepDurationAverage,
-    receivedPattern: user.pattern || "❌ אין דפוס מוכן"
-  });
-
   const pattern = user.pattern || evaluateDecisionTree(decisionTree, user);
-
-  const { insight, recommendation } =
-    insightsAndRecommendations[pattern] || insightsAndRecommendations["unknown"];
-
+  const rawRecommendation = insightsAndRecommendations[pattern]?.recommendation;
+  const recommendation = typeof rawRecommendation === "function"
+    ? rawRecommendation(user)
+    : rawRecommendation;
+  const insight = insightsAndRecommendations[pattern]?.insight || "";
   const translatedPattern = patternTranslations[pattern] || "לא זוהה דפוס";
 
   return {
@@ -102,5 +144,4 @@ function runInitialAnalysis(user) {
   };
 }
 
-
-  module.exports = { runInitialAnalysis };
+module.exports = { runInitialAnalysis };

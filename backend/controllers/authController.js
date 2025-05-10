@@ -1,33 +1,8 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-// const {
-//   generateInsights,
-//   generateRecommendations,
-// } = require("../algorithms/prediction");
-// const { initialBehaviorModel } = require('../analysis/initialBehaviorModel');
 
 const SECRET_KEY = process.env.JWT_SECRET || "03122002";
-
-// const getInsights = async (req, res) => {
-//   try {
-//     const { userId } = req.params;
-//     const user = await User.findOne({ userId });
-//     // const tfMessage = await initialBehaviorModel(user);
-//     // console.log("🎯 tfMessage שנשלח:", tfMessage);
-
-//     if (!user) {
-//       return res.status(404).json({ message: "❌ המשתמש לא נמצא" });
-//     }
-//     const insights = generateInsights(user.coffeeConsumption);
-//     const recommendations = generateRecommendations(user.coffeeConsumption);
-
-//     res.status(200).json({ insights, recommendations });
-//   } catch (error) {
-//     console.error("❌ שגיאה בהפקת תובנות:", error.message);
-//     res.status(500).json({ message: "❌ שגיאה בשרת", error: error.message });
-//   }
-// };
 
 const registerUser = async (req, res) => {
   try {
@@ -157,7 +132,6 @@ const loginUser = async (req, res) => {
 };
 
 
-// בדיקה אם המשתמש קיים לפי אימייל ותעודת זהות
 const checkUser = async (req, res) => {
   try {
     const { email, idNumber } = req.body;
@@ -176,7 +150,6 @@ const checkUser = async (req, res) => {
 };
 
 
-// איפוס סיסמה
 const resetPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
@@ -235,7 +208,6 @@ const savePushToken = async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
-  // getInsights,
   checkUser,
   resetPassword,
   savePushToken,

@@ -52,10 +52,11 @@ export default function PasswordChange() {
       Alert.alert("⚠️ שגיאה", "אירעה שגיאה. נסה שוב מאוחר יותר.");
     }
   };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🔒 הגדרת סיסמה חדשה</Text>
-      {/* שדה סיסמה חדשה */}
+
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -75,7 +76,6 @@ export default function PasswordChange() {
           />
         </TouchableOpacity>
       </View>
-      {/* שדה אימות סיסמה */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -95,8 +95,6 @@ export default function PasswordChange() {
           />
         </TouchableOpacity>
       </View>
-
-      {/* הודעת שגיאה אם הסיסמאות לא תואמות */}
       {passwordMismatchError && (
         <Text style={styles.errorText}>❌ הסיסמאות אינן תואמות</Text>
       )}

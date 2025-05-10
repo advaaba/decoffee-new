@@ -7,7 +7,7 @@ const insightSchema = new mongoose.Schema({
     {
       text: { type: String, required: true },
       source: { type: String, enum: ["algorithm", "openai"], required: true },
-      type: { type: String, enum: ["general", "daily"], required: true },
+      type: { type: String, enum: ["general", "daily", "gpt_explanation"], required: true },
       date: { type: Date, default: Date.now }
     }
   ]

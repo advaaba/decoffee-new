@@ -13,6 +13,7 @@ import BASE_URL from "../../utils/apiConfig";
 export default function HistoryDailyData() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedIndexes, setExpandedIndexes] = useState([]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -20,7 +21,9 @@ export default function HistoryDailyData() {
       if (!userId) return;
 
       try {
-        const res = await axios.get(`${BASE_URL}/api/dailypattern/history/${userId}`);
+        const res = await axios.get(
+          `${BASE_URL}/api/dailypattern/history/${userId}`
+        );
         const { insights, recommendations } = res.data;
 
         const combined = insights.map((insight, index) => ({
@@ -40,6 +43,12 @@ export default function HistoryDailyData() {
     fetchHistory();
   }, []);
 
+  const toggleExpand = (index) => {
+    setExpandedIndexes((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -51,15 +60,33 @@ export default function HistoryDailyData() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📅 היסטוריית סקירות יומיות</Text>
+      <Text style={styles.title}>📚 היסטוריית סקירות יומיות</Text>
       {history.length === 0 ? (
         <Text style={styles.empty}>אין עדיין תובנות יומיות</Text>
       ) : (
         history.map((entry, idx) => (
           <View key={idx} style={styles.card}>
             <Text style={styles.date}>תאריך: {entry.date}</Text>
-            <Text style={styles.insight}> תובנה: {entry.insight}</Text>
-            <Text style={styles.recommendation}> המלצה: {entry.recommendation}</Text>
+            <Text style={styles.insight} onPress={() => toggleExpand(idx)}>
+              תובנה:{" "}
+              {expandedIndexes.includes(idx)
+                ? entry.insight
+                : entry.insight.length > 80
+                ? entry.insight.substring(0, 80) + "..."
+                : entry.insight}
+            </Text>
+
+            <Text
+              style={styles.recommendation}
+              onPress={() => toggleExpand(idx)}
+            >
+              המלצה:{" "}
+              {expandedIndexes.includes(idx)
+                ? entry.recommendation
+                : entry.recommendation.length > 80
+                ? entry.recommendation.substring(0, 80) + "..."
+                : entry.recommendation}
+            </Text>
           </View>
         ))
       )}
@@ -92,15 +119,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 5,
+    textAlign: "right",
   },
   insight: {
     fontSize: 16,
     marginBottom: 4,
+    color: "#1a237e", 
+    textAlign: "right",
   },
   recommendation: {
     fontSize: 16,
-    color: "#333",
+    color: "#1a237e",
+    textAlign: "right",
   },
+  
   empty: {
     textAlign: "center",
     fontSize: 16,

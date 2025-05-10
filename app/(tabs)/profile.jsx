@@ -162,11 +162,10 @@ export default function Profile() {
           label="גיל"
           value={editedUser.age?.toString()}
           field="age"
-          editMode={false} // גיל לא ניתן לעריכה ידנית
+          editMode={false} 
           onChange={handleFieldChange}
         />
 
-        {/* תאריך לידה בדרופ דאון */}
         <View style={styles.row}>
           <Text style={styles.label}>תאריך יום הולדת:</Text>
           {editMode ? (

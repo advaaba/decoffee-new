@@ -4,12 +4,11 @@ const router = express.Router();
 const {
   analyzeAndSaveDailyPattern,
   getDailyInsightsAndRecommendations,
+  getDailyHistory
 } = require("../controllers/dailyPatternController");
 
-// ניתוח יומי ושמירת תובנות והמלצות
 router.post("/analyze", analyzeAndSaveDailyPattern);
 
-// שליפת תובנות והמלצות יומיות למשתמש
 router.get("/get-insights/:userId", getDailyInsightsAndRecommendations);
-
+router.get("/history/:userId", getDailyHistory);
 module.exports = router;

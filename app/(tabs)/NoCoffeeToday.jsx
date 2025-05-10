@@ -143,6 +143,12 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
         await axios.post(`${BASE_URL}/api/dailyData`, finalData);
         Alert.alert("✅ הסקירה נשמרה בהצלחה!");
       }
+
+      await axios.post(`${BASE_URL}/api/dailypattern/analyze`, {
+        userId,
+        date: new Date().toISOString().split("T")[0],
+      });
+      
       router.push("/(tabs)/create?reload=true");
 
     } catch (err) {

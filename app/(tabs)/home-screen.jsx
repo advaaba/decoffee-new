@@ -69,7 +69,7 @@ export default function HomeScreen() {
   };
 
   const scheduleHourlyReminders = async () => {
-    const intervals = [9, 11, 13, 15, 17, 19]; // שעות שבהן תישלח תזכורת
+    const intervals = [9, 11, 13, 15, 17, 19]; 
   
     for (let hour of intervals) {
       const date = new Date();
@@ -363,7 +363,6 @@ export default function HomeScreen() {
               קפאין משפיע עלייך ולבנות הרגלים שמתאימים לך אישית
             </Text>
 
-            {/* 💡 הוסיפי את זה כאן */}
             {(() => {
               const isCoffeeSurveyMissing =
                 !generalSurvey ||
@@ -427,12 +426,7 @@ export default function HomeScreen() {
                 </View>
               );
             })()}
-            {/* <Button
-              title="שלח לי תזכורת עכשיו 🚀"
-              onPress={sendImmediateNotification}
-              color="#2196F3"
-              style={{ marginTop: 10 }}
-            /> */}
+           
             <TouchableOpacity onPress={handleLogout} style={styles.backLink}>
               <Text style={styles.linkText}>התנתקות מהחשבון</Text>
             </TouchableOpacity>
@@ -445,6 +439,12 @@ export default function HomeScreen() {
   );
 }
 
+ {/* <Button
+              title="שלח לי תזכורת עכשיו 🚀"
+              onPress={sendImmediateNotification}
+              color="#2196F3"
+              style={{ marginTop: 10 }}
+            /> */}
 const styles = StyleSheet.create({
   container: {
     padding: 20,

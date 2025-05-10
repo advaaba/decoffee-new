@@ -9,10 +9,12 @@ import {
   View,
   Alert,
 } from "react-native";
+import { useFocusEffect } from "expo-router";
 import RadioGroup from "react-native-radio-buttons-group";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import BASE_URL from "../../utils/apiConfig";
+import HistoryDailyData from "./historyDailyData"; 
 
 export default function ExploreScreen() {
   const [insights, setInsights] = useState([]);
@@ -29,45 +31,33 @@ export default function ExploreScreen() {
     { id: "don't know", label: "לא יודע/ת", value: "don't know" },
   ];
 
-  useEffect(() => {
-    const analyzeAndFetch = async () => {
-      const userId = await AsyncStorage.getItem("userId");
-      if (!userId) return;
+  const patternTranslations = {
+    morning_drinker: "שותה קפה בבוקר כדי להתעורר",
+    fatigue_based: "שתייה עקב עייפות",
+    stress_drinker: "שתייה עקב מתח",
+    high_intake: "צריכה גבוהה לפי משקל",
+    habitual: "שתייה מתוך הרגל",
+    trying_to_reduce: "מנסה להפחית צריכה",
+    balanced: "צריכה מאוזנת",
+    unknown: "לא זוהה דפוס",
+  };
 
-      try {
-        // שליפת הנתונים מהשרת
-        const userResponse = await axios.get(
-          `${BASE_URL}/api/auth/get-user/${userId}`
-        );
-        const generalResponse = await axios.get(
-          `${BASE_URL}/api/generaldata/get-survey/${userId}`
-        );
-        const today = new Date().toISOString().split("T")[0];
+  useFocusEffect(
+    React.useCallback(() => {
+      const analyzeAndFetch = async () => {
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId) return;
 
-        const checkDailyData = await axios.get(
-          `${BASE_URL}/api/dailydata/check`,
-          {
-            params: { userId, date: today },
-          }
-        );
+        try {
+          const today = new Date().toISOString().split("T")[0];
 
-        if (checkDailyData.data.exists) {
-          // שלב 1: הרצת ניתוח ושמירה של הסקירה היומית
-          await axios.post(`${BASE_URL}/api/dailypattern/analyze`, {
-            userId,
-            date: today,
-          });
-
-          // שלב 2: שליפת התובנות וההמלצות מהמסד
-          const dailyResponse = await axios.get(
-            `${BASE_URL}/api/dailypattern/get-insights/${userId}`
+          const checkDailyData = await axios.get(
+            `${BASE_URL}/api/dailydata/check`,
+            { params: { userId, date: today } }
           );
 
-          console.log("📦 dailyResponse.data:", dailyResponse.data);
-          console.log("🧠 dailyInsights:", dailyResponse.data.insights);
-          console.log(
-            "🎯 dailyRecommendations:",
-            dailyResponse.data.recommendations
+          const dailyResponse = await axios.get(
+            `${BASE_URL}/api/dailypattern/get-insights/${userId}`
           );
 
           setDailyInsights(
@@ -80,110 +70,109 @@ export default function ExploreScreen() {
               (r) => r.source === "combined"
             )
           );
+
+          const insightRes = await axios.get(
+            `${BASE_URL}/api/pattern/get-insights/${userId}?type=general`
+          );
+          const { insights, recommendations, pattern } = insightRes.data;
+
+          setPattern(pattern);
+          setInsights(insights.map((i) => i.text));
+          setRecommendations(recommendations.map((r) => r.text));
+        } catch (err) {
+          console.error("❌ שגיאה בניתוח הדפוס:", err);
+          Alert.alert("שגיאה", "אירעה שגיאה בעת ניתוח הנתונים");
         }
+      };
 
-        const user = userResponse.data.user;
-        const general = generalResponse.data.survey;
-
-        const analysisInput = {
-          userId: user.userId,
-          averageCaffeinePerDay: general.averageCaffeinePerDay,
-          caffeineRecommendationMin: user.caffeineRecommendationMin,
-          caffeineRecommendationMax: user.caffeineRecommendationMax,
-          consumptionTime: general.consumptionTime,
-          sleepDurationAverage: general.sleepDurationAverage,
-        };
-
-        // 🔁 קריאה ל-OpenAI + שמירה בבקאנד
-        const analysisResponse = await axios.post(
-          `${BASE_URL}/api/pattern/analyze`,
-          {
-            userId: await AsyncStorage.getItem("userId"),
-          }
-        );
-
-        const { pattern, insights, recommendations } = analysisResponse.data;
-
-        setPattern(pattern);
-        setInsights(insights);
-        setRecommendations(recommendations.map((r) => r.text)); // רק הטקסט מתוך האובייקטים
-      } catch (err) {
-        console.error("❌ שגיאה בניתוח הדפוס:", err);
-        Alert.alert("שגיאה", "אירעה שגיאה בעת ניתוח הנתונים");
-      }
-    };
-
-    analyzeAndFetch();
-  }, []);
+      analyzeAndFetch();
+    }, [])
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {insights.length > 0 && (
-        <>
-          <Text style={styles.title}>תובנה כללית</Text>
-          {insights.map((text, index) => (
-            <Text key={index} style={styles.insightText}>
-              {text}
-            </Text>
-          ))}
-        </>
-      )}
+      {(insights.length > 0 || recommendations.length > 0 || pattern) && (
+        <View style={styles.generalContainer}>
+          <Text style={styles.title}>📌 סקירה כללית</Text>
 
-      {recommendations.length > 0 && (
-        <>
-          <Text style={styles.title}>המלצה כללית</Text>
-          {recommendations.map((rec, index) => (
-            <Text key={index} style={styles.recText}>
-              {rec}
-            </Text>
-          ))}
-        </>
-      )}
+          {insights.length > 0 && (
+            <>
+              <Text style={styles.subtitle}>תובנה</Text>
+              {insights.map((text, index) => (
+                <Text key={index} style={styles.insightText}>
+                  {text}
+                </Text>
+              ))}
+            </>
+          )}
 
-      {pattern && (
-        <>
-          <Text style={styles.title}>דפוס מזוהה</Text>
-          <Text style={{ textAlign: "center", marginBottom: 10, fontSize: 20 }}>
-            {pattern}
-          </Text>
-        </>
+          {recommendations.length > 0 && (
+            <>
+              <Text style={styles.subtitle}>המלצה</Text>
+              {recommendations.map((rec, index) => (
+                <Text key={index} style={styles.recText}>
+                  {rec}
+                </Text>
+              ))}
+            </>
+          )}
+
+          {pattern && (
+            <>
+              <Text style={styles.subtitle}>דפוס מזוהה</Text>
+              <Text style={styles.patternText}>
+                {patternTranslations[pattern] || "דפוס לא מזוהה"}
+              </Text>
+            </>
+          )}
+        </View>
       )}
 
       {dailyInsights.length > 0 && dailyRecommendations.length > 0 && (
-        <>
-          <Text style={styles.title}>תובנה יומית</Text>
+        <View style={styles.generalContainer}>
+          <Text style={styles.title}>📅 סקירה יומית</Text>
+
+          <Text style={styles.subtitle}>תובנה</Text>
           {dailyInsights.map((text, index) => (
             <Text key={index} style={styles.insightText}>
               {text.text}
             </Text>
           ))}
 
-          <Text style={styles.title}>המלצה יומית</Text>
+          <Text style={styles.subtitle}>המלצה</Text>
           {dailyRecommendations.map((rec, index) => (
             <Text key={index} style={styles.recText}>
               {rec.text}
             </Text>
           ))}
 
-          <Text style={styles.label}>האם ההמלצה רלוונטית עבורך?</Text>
-          <RadioGroup
-            radioButtons={yesNoMaybeOptions}
-            onPress={setRelevanceAnswer}
-            selectedId={relevanceAnswer}
-            layout="row"
-          />
-          <Text style={styles.label}>האם יישמת את ההמלצה?</Text>
-          <RadioGroup
-            radioButtons={yesNoMaybeOptions}
-            onPress={setAppliedAnswer}
-            selectedId={appliedAnswer}
-            layout="row"
-          />
+          <View style={styles.feedbackContainer}>
+            <Text style={styles.label}>האם ההמלצה רלוונטית עבורך?</Text>
+            <RadioGroup
+              radioButtons={yesNoMaybeOptions}
+              onPress={setRelevanceAnswer}
+              selectedId={relevanceAnswer}
+              layout="row"
+            />
 
-          <View style={{ marginTop: 15 }}>
-            <Button title="שמור משוב" />
+            <Text style={styles.label}>האם יישמת את ההמלצה?</Text>
+            <RadioGroup
+              radioButtons={yesNoMaybeOptions}
+              onPress={setAppliedAnswer}
+              selectedId={appliedAnswer}
+              layout="row"
+            />
+
+            <View style={{ marginTop: 15 }}>
+              <Button
+                title="שמור משוב"
+                onPress={() => {
+                  /* תפעילי כאן את הפונקציה שלך */
+                }}
+              />
+            </View>
           </View>
-        </>
+        </View>
       )}
 
       {insights.length === 0 && dailyInsights.length === 0 && (
@@ -200,11 +189,7 @@ export default function ExploreScreen() {
             ) : (
               <Text>טוען נתונים...</Text>
             )} */}
-
-      <Text style={styles.title}>📚 היסטוריית תובנות והמלצות</Text>
-      <Text style={{ textAlign: "center" }}>
-        (בהמשך ניתן יהיה להציג כאן את ההיסטוריה)
-      </Text>
+      <HistoryDailyData />
     </ScrollView>
   );
 }
@@ -212,18 +197,15 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    // backgroundColor: "#fff",
     minHeight: "100%",
   },
   title: {
     fontSize: 26,
     fontWeight: "bold",
     marginBottom: 15,
-    // color: "#ffc8dd",
     textAlign: "center",
   },
   text: {
-    // color: "white",
     marginBottom: 10,
     fontSize: 20,
     textAlign: "center",
@@ -244,4 +226,38 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "right",
   },
+  generalContainer: {
+    backgroundColor: "#f0f4f8",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
+  subtitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 5,
+    marginTop: 15,
+    textAlign: "center",
+    color: "#184e77",
+  },
+
+  patternText: {
+    fontSize: 18,
+    marginTop: 5,
+    textAlign: "center",
+    color: "#333",
+  },
+  feedbackContainer: {
+    marginTop: 30,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderColor: "#ccc",
+  },
+  
 });

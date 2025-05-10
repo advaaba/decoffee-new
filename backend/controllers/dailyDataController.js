@@ -98,6 +98,7 @@ const updateDailyEntry = async (req, res) => {
       });
   }
 };
+
 const checkDailyEntryExists = async (req, res) => {
   try {
     const { userId, date } = req.query;
