@@ -78,7 +78,7 @@ export default function HistoryDailyData() {
 
             <Text
               style={styles.recommendation}
-              onPress={() => toggleExpand(idx)}
+              onPress={()  => toggleExpand(idx)}
             >
               המלצה:{" "}
               {expandedIndexes.includes(idx)
