@@ -15,6 +15,7 @@ import axios from "axios";
 import BASE_URL from "../../utils/apiConfig";
 import * as Notifications from "expo-notifications";
 import { useFocusEffect } from "@react-navigation/native";
+import { generateCustomReminders } from "../../analysis/customReminder";
 
 export default function HomeScreen() {
   const [user, setUser] = useState(null);
@@ -62,19 +63,19 @@ export default function HomeScreen() {
     const today = new Date().toISOString().split("T")[0];
     await AsyncStorage.setItem(`dailyRemindersScheduled_${today}`, "true");
   };
-  
+
   const checkIfRemindersScheduled = async () => {
     const today = new Date().toISOString().split("T")[0];
     return await AsyncStorage.getItem(`dailyRemindersScheduled_${today}`);
   };
 
   const scheduleHourlyReminders = async () => {
-    const intervals = [9, 11, 13, 15, 17, 19]; 
-  
+    const intervals = [9, 11, 13, 15, 17, 19];
+
     for (let hour of intervals) {
       const date = new Date();
       date.setHours(hour, 0, 0, 0);
-  
+
       if (date > new Date()) {
         await Notifications.scheduleNotificationAsync({
           content: {
@@ -85,16 +86,38 @@ export default function HomeScreen() {
         });
       }
     }
-  
+
     console.log("📅 תזכורות כל שעתיים הוגדרו");
     await markRemindersScheduled();
   };
-  
+
+  const scheduleCustomReminders = async (insightData) => {
+    const reminders = generateCustomReminders(insightData);
+
+    for (const { time, message } of reminders) {
+      const [hour, minute] = time.split(":").map(Number);
+      const date = new Date();
+      date.setHours(hour, minute, 0, 0);
+
+      if (date > new Date()) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: " תזכורת מותאמת אישית",
+            body: message,
+          },
+          trigger: { date },
+        });
+
+        console.log(` תזכורת נקבעה ל־${time}: ${message}`);
+      }
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       const refreshData = async () => {
         await checkDailyData();
-  
+
         try {
           const userId = await AsyncStorage.getItem("userId");
           const surveyResponse = await axios.get(
@@ -103,7 +126,7 @@ export default function HomeScreen() {
 
           const survey = surveyResponse.data?.survey;
           setGeneralSurvey(survey);
-  
+
           if (dailyStatus !== "מילאת את הסקירה היומית!") {
             const alreadyScheduled = await checkIfRemindersScheduled();
             if (!alreadyScheduled) {
@@ -116,85 +139,10 @@ export default function HomeScreen() {
           console.error("❌ שגיאה בטעינת הסקירה הכללית:", error);
         }
       };
-  
+
       refreshData();
     }, [dailyStatus])
   );
-  
-  const handleMissedNotification = async (timeLabel, hour, minute) => {
-    const today = new Date().toISOString().split("T")[0];
-    const key = `notificationSent_${timeLabel}_${today}`;
-
-    const alreadySent = await AsyncStorage.getItem(key);
-    if (alreadySent) {
-      console.log(`🔁 תזכורת עבור ${timeLabel} כבר נשלחה היום`);
-      return;
-    }
-
-    const now = new Date();
-    const scheduledTime = new Date();
-    scheduledTime.setHours(hour, minute, 0, 0);
-
-    if (now > scheduledTime) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "☕ זמן קפה שהוחמץ!",
-          body: `שכחת את הקפה של ${timeLabel}? עדיין יש זמן לקחת רגע לעצמך.`,
-        },
-        trigger: null, // שליחה מיידית
-      });
-      console.log(`📨 תזכורת ${timeLabel} נשלחה באיחור`);
-      await AsyncStorage.setItem(key, "true");
-    }
-  };
-
-  const scheduleNotificationsForConsumptionTimes = async (consumptionTimes) => {
-    if (!consumptionTimes || consumptionTimes.length === 0) {
-      console.log("⚠️ אין זמני שתיית קפה להגדיר תזכורות.");
-      return;
-    }
-
-    const notificationTimes = {
-      Morning: { hour: 9, minute: 0 },
-      Afternoon: { hour: 15, minute: 0 },
-      evening: { hour: 19, minute: 0 },
-      night: { hour: 22, minute: 0 },
-    };
-
-    const existingNotifications =
-      await Notifications.getAllScheduledNotificationsAsync();
-
-    for (const time of consumptionTimes) {
-      const identifier = `coffeeReminder_${time}`;
-      const alreadyScheduled = existingNotifications.some(
-        (notif) => notif.identifier === identifier
-      );
-
-      const { hour, minute } = notificationTimes[time];
-      const now = new Date();
-      const triggerDate = new Date();
-      triggerDate.setHours(hour, minute, 0, 0);
-
-      if (triggerDate <= now) {
-        await handleMissedNotification(time, hour, minute);
-      } else if (!alreadyScheduled) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "☕ זמן קפה הגיע!",
-            body: `זה הזמן המושלם להפסקת קפה (${time}) 🌟`,
-          },
-          trigger: {
-            date: triggerDate,
-          },
-          identifier, // ייחודי לכל תזכורת
-        });
-
-        console.log(`✅ תזכורת עתידית נקבעה ל־${time}: ${triggerDate}`);
-      } else {
-        console.log(`🔁 תזכורת ${time} כבר מתוזמנת`);
-      }
-    }
-  };
 
   const sendImmediateNotification = async () => {
     try {
@@ -211,36 +159,67 @@ export default function HomeScreen() {
     }
   };
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userId = await AsyncStorage.getItem("userId");
+useEffect(() => {
+  const loadUser = async () => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      const today = new Date().toISOString().split("T")[0];
 
-        const response = await axios.get(
-          `${BASE_URL}/api/auth/get-user/${userId}`
+      // שלב 1: שליפת משתמש
+      const response = await axios.get(
+        `${BASE_URL}/api/auth/get-user/${userId}`
+      );
+
+      if (response.data.success) {
+        setUser(response.data.user);
+
+        // שלב 2: בדיקת הסקירה היומית
+        await checkDailyData();
+
+        // שלב 3: שליפת הסקירה הכללית
+        const surveyResponse = await axios.get(
+          `${BASE_URL}/api/generalData/get-survey/${userId}`
         );
-        if (response.data.success) {
-          setUser(response.data.user);
-          await checkDailyData();
+        const survey = surveyResponse.data?.survey;
+        setGeneralSurvey(survey);
 
-          const surveyResponse = await axios.get(
-            `${BASE_URL}/api/generalData/get-survey/${userId}`
-          );
-          const survey = surveyResponse.data?.survey;
+        // שלב 4: שליפת הסקירה היומית מהיום
+        const dailyRes = await axios.get(
+          `${BASE_URL}/api/dailyData/get/${userId}/${today}`
+        );
+        const dailyData = dailyRes.data?.dailyData;
 
-          setGeneralSurvey(survey);
+        // שלב 5: בדיקה אם תזכורות מותאמות כבר נשלחו היום
+        const alreadyScheduledCustom = await AsyncStorage.getItem(
+          `customRemindersScheduled_${today}`
+        );
 
-          await scheduleNotificationsForConsumptionTimes(
-            survey?.consumptionTime || []
-          );
+        if (!alreadyScheduledCustom) {
+          const customReminderInput = {
+            drankCoffee: dailyData?.drankCoffee ?? true,
+            pattern: survey?.pattern,
+            mood: dailyData?.mood,
+            tirednessLevel: dailyData?.tirednessLevel,
+            wantsToReduce: survey?.wantsToReduce,
+            consumptionTime: survey?.consumptionTime,
+          };
+
+          await scheduleCustomReminders(customReminderInput);
+          await AsyncStorage.setItem(`customRemindersScheduled_${today}`, "true");
+        } else {
+          console.log("🔁 תזכורות מותאמות כבר הוגדרו היום");
         }
-      } catch (err) {
-      } finally {
-        setLoading(false);
       }
-    };
-    loadUser();
-  }, []);
+    } catch (err) {
+      console.error("❌ שגיאה בטעינת המשתמש או הסקרים:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadUser();
+}, []);
+
 
   useEffect(() => {
     const requestNotificationPermission = async () => {
@@ -418,7 +397,7 @@ export default function HomeScreen() {
                     </>
                   ) : (
                     <View style={styles.messageBlock}>
-                      <Text style={styles.textMessage}> 
+                      <Text style={styles.textMessage}>
                         אין הודעות חדשות עבורך כרגע.
                       </Text>
                     </View>
@@ -426,7 +405,7 @@ export default function HomeScreen() {
                 </View>
               );
             })()}
-           
+
             <TouchableOpacity onPress={handleLogout} style={styles.backLink}>
               <Text style={styles.linkText}>התנתקות מהחשבון</Text>
             </TouchableOpacity>
@@ -439,12 +418,14 @@ export default function HomeScreen() {
   );
 }
 
- {/* <Button
+{
+  /* <Button
               title="שלח לי תזכורת עכשיו 🚀"
               onPress={sendImmediateNotification}
               color="#2196F3"
               style={{ marginTop: 10 }}
-            /> */}
+            /> */
+}
 const styles = StyleSheet.create({
   container: {
     padding: 20,
@@ -530,5 +511,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#4CAF50",
     marginBottom: 10,
-  }
+  },
 });

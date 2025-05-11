@@ -150,7 +150,7 @@ export default function YesCoffeeToday({ onDataChange, generalData, entryId }) {
     { label: "לילה", value: "night" },
   ];
 
-  const handleContinue = async () => {
+  const handleDailyData = async () => {
     console.log("▶️ לחצו על כפתור השליחה");
     const userId = await AsyncStorage.getItem("userId");
 
@@ -331,7 +331,7 @@ export default function YesCoffeeToday({ onDataChange, generalData, entryId }) {
       <Button
         title="שליחה"
         color="#4CAF50"
-        onPress={handleContinue}
+        onPress={handleDailyData}
         disabled={!isFormValid}
       />
     </ScrollView>

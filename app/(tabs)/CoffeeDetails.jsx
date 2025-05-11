@@ -343,7 +343,7 @@ export default function CoffeeDetails() {
     setIsMotivation(item.value >= 3);
   };
 
-  const handleRegister = async () => {
+  const handleGeneralData = async () => {
     const hasErrors = checkValidate();
     if (hasErrors) {
       Alert.alert("שגיאה", "אנא תקנ/י את השדות המסומנים באדום");
@@ -858,7 +858,7 @@ export default function CoffeeDetails() {
         <View style={styles.buttonGroup}>
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={handleRegister}
+            onPress={handleGeneralData}
           >
             <Text style={styles.buttonText}>
               {isEditMode ? "עדכן" : "סיום"}

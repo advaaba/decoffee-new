@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
@@ -26,13 +27,53 @@ export default function HistoryDailyData() {
         );
         const { insights, recommendations } = res.data;
 
-        const combined = insights.map((insight, index) => ({
-          date: insight.date || "ללא תאריך",
-          insight: insight.text,
-          recommendation: recommendations[index]?.text || "אין המלצה",
+        const groupedByDate = {};
+
+        insights.forEach((insight) => {
+          const dateKey = insight.date
+            ? new Date(insight.date).toLocaleDateString("he-IL", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+            : "ללא תאריך";
+
+          if (!groupedByDate[dateKey]) {
+            groupedByDate[dateKey] = { insights: [], recommendations: [] };
+          }
+
+          if (insight.text) {
+            groupedByDate[dateKey].insights.push(insight.text);
+          }
+        });
+
+        recommendations.forEach((recommendation) => {
+          const dateKey = recommendation.date
+            ? new Date(recommendation.date).toLocaleDateString("he-IL", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+            : "ללא תאריך";
+
+          if (!groupedByDate[dateKey]) {
+            groupedByDate[dateKey] = { insights: [], recommendations: [] };
+          }
+
+          if (recommendation.text) {
+            groupedByDate[dateKey].recommendations.push(recommendation.text);
+          }
+        });
+
+        const combined = Object.entries(groupedByDate).map(([date, data]) => ({
+          date,
+          insights: data.insights,
+          recommendations: data.recommendations,
         }));
 
-        setHistory(combined.reverse()); // הצגה מהחדש לישן
+        combined.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        setHistory(combined);
       } catch (err) {
         console.error("❌ שגיאה בשליפת היסטוריה יומית:", err);
       } finally {
@@ -43,9 +84,9 @@ export default function HistoryDailyData() {
     fetchHistory();
   }, []);
 
-  const toggleExpand = (index) => {
+  const toggleExpand = (id) => {
     setExpandedIndexes((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
@@ -61,32 +102,59 @@ export default function HistoryDailyData() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>📚 היסטוריית סקירות יומיות</Text>
+      <Text style={styles.instructions}>
+        ניתן ללחוץ על תובנה או המלצה כדי לקרוא את כולה
+      </Text>
       {history.length === 0 ? (
         <Text style={styles.empty}>אין עדיין תובנות והמלצות יומיות</Text>
       ) : (
         history.map((entry, idx) => (
-          <View key={idx} style={styles.card}>
-            <Text style={styles.date}>תאריך: {entry.date}</Text>
-            <Text style={styles.insight} onPress={() => toggleExpand(idx)}>
-              תובנה:{" "}
-              {expandedIndexes.includes(idx)
-                ? entry.insight
-                : entry.insight.length > 80
-                ? entry.insight.substring(0, 80) + "..."
-                : entry.insight}
-            </Text>
+          <View
+            key={idx}
+            style={[
+              styles.card,
+              { backgroundColor: idx % 2 === 0 ? "#f2f2f2" : "#f2f2f2" },
+            ]}
+          >
+            <Text style={styles.date}>📅 {entry.date}</Text>
 
-            <Text
-              style={styles.recommendation}
-              onPress={()  => toggleExpand(idx)}
-            >
-              המלצה:{" "}
-              {expandedIndexes.includes(idx)
-                ? entry.recommendation
-                : entry.recommendation.length > 80
-                ? entry.recommendation.substring(0, 80) + "..."
-                : entry.recommendation}
-            </Text>
+            <Text style={styles.subtitle}> תובנות</Text>
+            {entry.insights.map((text, i) => {
+              const id = `${idx}-insight-${i}`;
+              const isExpanded = expandedIndexes.includes(id);
+              const displayText =
+                isExpanded || text.length <= 30
+                  ? text
+                  : text.substring(0, 30) + "...";
+
+              return (
+                <Pressable key={id} onPress={() => toggleExpand(id)}>
+                  <Text style={styles.insight}>
+                    - {displayText}
+                  </Text>
+                </Pressable>
+              );
+            })}
+
+            <Text style={styles.subtitle}> המלצות</Text>
+            {entry.recommendations.map((text, i) => {
+              const id = `${idx}-rec-${i}`;
+              const isExpanded = expandedIndexes.includes(id);
+              const displayText =
+                isExpanded || text.length <= 30
+                  ? text
+                  : text.substring(0, 30) + "...";
+
+              return (
+                <Pressable key={id} onPress={() => toggleExpand(id)}>
+                  <Text style={styles.recommendation}>
+                    - {displayText}
+                  </Text>
+                </Pressable>
+              );
+            })}
+
+            <View style={styles.separator} />
           </View>
         ))
       )}
@@ -106,36 +174,62 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: "center",
+    color: "#0d47a1",
+  },
+  instructions: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 15,
+    color: "#444",
   },
   card: {
-    backgroundColor: "#f2f2f2",
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 15,
     marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   date: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 5,
+    marginBottom: 10,
     textAlign: "right",
+    color: "#1b1b1b",
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 5,
+    marginTop: 10,
+    textAlign: "right",
+    color: "#0d47a1",
   },
   insight: {
     fontSize: 16,
-    marginBottom: 4,
-    color: "#1a237e", 
+    marginBottom: 6,
+    color: "#1a237e",
     textAlign: "right",
   },
   recommendation: {
     fontSize: 16,
-    color: "#1a237e",
+    color: "#1a6f2e",
+    marginBottom: 6,
     textAlign: "right",
   },
-  
+  separator: {
+    marginTop: 10,
+    borderBottomColor: "#ccc",
+    borderBottomWidth: 1,
+  },
   empty: {
     textAlign: "center",
     fontSize: 16,
     marginTop: 30,
+    color: "#666",
   },
 });

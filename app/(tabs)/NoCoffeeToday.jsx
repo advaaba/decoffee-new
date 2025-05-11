@@ -106,7 +106,7 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
     { id: "don't know", label: "לא יודע/ת", value: "don't know" },
   ];
 
-  const handleContinue = async () => {
+  const handleDailyData = async () => {
     
     const userId = await AsyncStorage.getItem("userId");
   
@@ -249,7 +249,7 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
       <Button
         title="שליחה"
         color="#4CAF50"
-        onPress={handleContinue}
+        onPress={handleDailyData}
         disabled={!isFormValid}
       />
     </ScrollView>

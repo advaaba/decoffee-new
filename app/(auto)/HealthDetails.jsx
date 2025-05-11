@@ -218,7 +218,7 @@ const HealthDetailsScreen = () => {
     setHealthData(newHealthData);
   };
 
-  const handleContinue = async () => {
+  const handleRegister = async () => {
     if (!validateForm()) return;
     if (!isFormValid()) {
       const missingFields = [];
@@ -449,7 +449,7 @@ const HealthDetailsScreen = () => {
         )}
         <Button
           title="סיום הרשמה"
-          onPress={handleContinue}
+          onPress={handleRegister}
           color="#4CAF50"
 
           // disabled={!isFormValid()}

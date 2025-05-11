@@ -16,7 +16,7 @@ export default function PasswordRecovery() {
   const [email, setEmail] = useState("");
   const [userId, setUerId] = useState("");
 
-  const handlePasswordResetRequest = async () => {
+  const handlePasswordRequest = async () => {
     if (!email || !userId) {
       Alert.alert("⚠️ שגיאה", "אנא מלאי גם אימייל וגם תעודת זהות.");
       return;
@@ -60,7 +60,7 @@ export default function PasswordRecovery() {
         keyboardType="numeric"
       />
 
-      <TouchableOpacity style={styles.button} onPress={handlePasswordResetRequest}>
+      <TouchableOpacity style={styles.button} onPress={handlePasswordRequest}>
         <Text style={styles.buttonText}>בדיקת פרטים</Text>
       </TouchableOpacity>
     </View>

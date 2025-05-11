@@ -141,11 +141,22 @@ exports.getDailyInsightsAndRecommendations = async (req, res) => {
     const insightDoc = await InsightModel.findOne({ userId });
     const recommendationDoc = await RecommendationModel.findOne({ userId });
 
-    const insights = (insightDoc?.insights || []).filter(
-      (i) => i.type === "daily" && i.date === date
-    );
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+
+    const insights = (insightDoc?.insights || []).filter((i) => {
+      const d = new Date(i.date);
+      return i.type === "daily" && d >= start && d <= end;
+    });
+
     const recommendations = (recommendationDoc?.recommendations || []).filter(
-      (r) => r.type === "daily" && r.date === date
+      (r) => {
+        const d = new Date(r.date);
+        return r.type === "daily" && d >= start && d <= end;
+      }
     );
 
     res.status(200).json({ insights, recommendations });
@@ -156,7 +167,6 @@ exports.getDailyInsightsAndRecommendations = async (req, res) => {
       .json({ success: false, error: "שגיאה בשליפת התובנות או ההמלצות" });
   }
 };
-
 
 exports.getDailyHistory = async (req, res) => {
   try {

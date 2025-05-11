@@ -74,6 +74,7 @@ export default function ExploreScreen() {
               (r) => r.source === "combined"
             )
           );
+        console.log("🎯 תובנות יומיות מהשרת:", dailyResponse.data.insights);
 
           const insightRes = await axios.get(
             `${BASE_URL}/api/pattern/get-insights/${userId}?type=general`
