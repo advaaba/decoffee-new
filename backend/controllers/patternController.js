@@ -7,12 +7,10 @@ const { runInitialAnalysis } = require("../analysis/initialPattern");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// POST /api/pattern/analyze
 exports.analyzeAndSaveUserPattern = async (req, res) => {
   try {
     const { userId } = req.body;
 
-    // שלב 1: שליפת נתוני משתמש וסקירה כללית
     const user = await UserModel.findOne({ userId });
     const general = await GeneralDataModel.findOne({ userId });
 
@@ -22,7 +20,6 @@ exports.analyzeAndSaveUserPattern = async (req, res) => {
         .json({ success: false, error: "משתמש או נתוני סקר לא נמצאו" });
     }
 
-    // שלב 2: בניית אובייקט לניתוח
     const userData = {
       userId,
       weight: user.weight,
@@ -43,7 +40,6 @@ exports.analyzeAndSaveUserPattern = async (req, res) => {
       selfDescription: general.selfDescription,
     };
 
-    // שלב 3: ניתוח דפוס עם GPT
     const prompt = `
 בהתבסס על נתוני המשתמש הבאים:
 
@@ -77,7 +73,6 @@ ${JSON.stringify(userData, null, 2)}
     const gptContent = response.choices[0].message.content;
     console.log("📦 פלט מ-GPT:", gptContent);
 
-    // ניקוי תגיות ```json אם קיימות
     const cleaned = gptContent.replace(/```json|```/g, "").trim();
 
     let parsedPattern;
@@ -96,10 +91,8 @@ ${JSON.stringify(userData, null, 2)}
     const { pattern, explanation } = parsedPattern;
     userData.pattern = pattern;
 
-    // שלב 4: הרצת האלגוריתם שלך
     const { insight, recommendation } = runInitialAnalysis(userData);
 
-    // שלב 5: שמירת התובנות וההמלצות במסד עם מקור וסוג
     await InsightModel.findOneAndUpdate(
       { userId },
       {
@@ -127,7 +120,7 @@ ${JSON.stringify(userData, null, 2)}
       { upsert: true, new: true }
     );
 
-    // שלב 6: תגובה ללקוח
+    
     res.status(200).json({
       success: true,
       pattern,
@@ -141,8 +134,6 @@ ${JSON.stringify(userData, null, 2)}
   }
 };
 
-// GET /api/pattern/get-insights/:userId
-// GET /api/pattern/get-insights/:userId
 exports.getUserInsightsAndRecommendations = async (req, res) => {
   try {
     const { userId } = req.params;

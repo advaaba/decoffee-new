@@ -62,7 +62,7 @@ export default function HistoryDailyData() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>📚 היסטוריית סקירות יומיות</Text>
       {history.length === 0 ? (
-        <Text style={styles.empty}>אין עדיין תובנות יומיות</Text>
+        <Text style={styles.empty}>אין עדיין תובנות והמלצות יומיות</Text>
       ) : (
         history.map((entry, idx) => (
           <View key={idx} style={styles.card}>

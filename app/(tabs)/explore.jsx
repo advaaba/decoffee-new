@@ -9,14 +9,15 @@ import {
   View,
   Alert,
 } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import RadioGroup from "react-native-radio-buttons-group";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import BASE_URL from "../../utils/apiConfig";
-import HistoryDailyData from "./historyDailyData"; 
+import HistoryDailyData from "./historyDailyData";
 
 export default function ExploreScreen() {
+  const router = useRouter();
   const [insights, setInsights] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [relevanceAnswer, setRelevanceAnswer] = useState(null);
@@ -24,6 +25,7 @@ export default function ExploreScreen() {
   const [pattern, setPattern] = useState(null);
   const [dailyInsights, setDailyInsights] = useState([]);
   const [dailyRecommendations, setDailyRecommendations] = useState([]);
+  const [hasTodayDailyData, setHasTodayDailyData] = useState(null);
 
   const yesNoMaybeOptions = [
     { id: "yes", label: "כן", value: "yes" },
@@ -55,9 +57,11 @@ export default function ExploreScreen() {
             `${BASE_URL}/api/dailydata/check`,
             { params: { userId, date: today } }
           );
+          setHasTodayDailyData(checkDailyData.data.exists);
 
           const dailyResponse = await axios.get(
-            `${BASE_URL}/api/dailypattern/get-insights/${userId}`
+            `${BASE_URL}/api/dailypattern/get-insights/${userId}`,
+            { params: { date: today } }
           );
 
           setDailyInsights(
@@ -88,6 +92,8 @@ export default function ExploreScreen() {
       analyzeAndFetch();
     }, [])
   );
+
+  const handleFeedbackSubmit = async () => {};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -164,34 +170,45 @@ export default function ExploreScreen() {
             />
 
             <View style={{ marginTop: 15 }}>
-              <Button
-                title="שמור משוב"
-                onPress={() => {
-                  /* תפעילי כאן את הפונקציה שלך */
-                }}
-              />
+              <Button title="שמור משוב" onPress={handleFeedbackSubmit} />
             </View>
           </View>
+          {hasTodayDailyData === false && (
+            <View style={styles.generalContainer}>
+              <Text style={styles.title}>📅 סקירה יומית</Text>
+              <Text style={styles.insightText}>
+                טרם הוזנה סקירה יומית עבור היום.{" "}
+                <Text
+                  style={{ color: "blue", textDecorationLine: "underline" }}
+                  onPress={() => router.push("/create")}
+                >
+                  לחצ/י כאן להזנה
+                </Text>
+              </Text>
+            </View>
+          )}
         </View>
       )}
 
       {insights.length === 0 && dailyInsights.length === 0 && (
         <Text style={{ textAlign: "center", fontSize: 16, marginVertical: 20 }}>
-          טרם מולאו תובנות או המלצות. חזור/י לכאן לאחר סקירה.
+          טרם מולאו תובנות או המלצות. חזור/י לכאן לאחר מילוי הסקירה.
         </Text>
       )}
+      <HistoryDailyData />
+    </ScrollView>
+  );
+}
 
-      {/* {caffeineMin !== null && caffeineMax !== null ? (
+{
+  /* {caffeineMin !== null && caffeineMax !== null ? (
               <Text>
                 כמות הקפאין המומלצת עבורך: {caffeineMin} - {caffeineMax} מ"ג ביום (
                 {finalCaffeine} סה\"כ)
               </Text>
             ) : (
               <Text>טוען נתונים...</Text>
-            )} */}
-      <HistoryDailyData />
-    </ScrollView>
-  );
+            )} */
 }
 
 const styles = StyleSheet.create({
@@ -259,5 +276,4 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: "#ccc",
   },
-  
 });
