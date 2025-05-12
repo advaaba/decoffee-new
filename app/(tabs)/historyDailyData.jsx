@@ -116,7 +116,7 @@ export default function HistoryDailyData() {
               { backgroundColor: idx % 2 === 0 ? "#f2f2f2" : "#f2f2f2" },
             ]}
           >
-            <Text style={styles.date}>📅 {entry.date}</Text>
+            <Text style={styles.date}> {entry.date}</Text>
 
             <Text style={styles.subtitle}> תובנות</Text>
             {entry.insights.map((text, i) => {

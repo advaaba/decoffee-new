@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
   Text,
-  Button,
   StyleSheet,
   ActivityIndicator,
   Alert,
@@ -15,7 +14,7 @@ import axios from "axios";
 import BASE_URL from "../../utils/apiConfig";
 import * as Notifications from "expo-notifications";
 import { useFocusEffect } from "@react-navigation/native";
-import { generateCustomReminders } from "../../analysis/customReminder";
+import { generateCustomReminders } from "../analysisFront/customReminder";
 
 export default function HomeScreen() {
   const [user, setUser] = useState(null);
@@ -42,7 +41,7 @@ export default function HomeScreen() {
 
   const checkDailyData = async () => {
     const userId = await AsyncStorage.getItem("userId");
-    const today = new Date().toISOString().split("T")[0]; // תאריך היום בתבנית yyyy-mm-dd
+    const today = new Date().toISOString().split("T")[0]; 
 
     try {
       const response = await axios.get(`${BASE_URL}/api/dailyData/check`, {
@@ -50,9 +49,9 @@ export default function HomeScreen() {
       });
 
       if (response.data.exists) {
-        setDailyStatus("מילאת את הסקירה היומית!"); // אם מילא, הצג את המצב החיובי
+        setDailyStatus("מילאת את הסקירה היומית!"); 
       } else {
-        setDailyStatus("עוד לא התחלת לעקוב אחרי צריכת הקפה שלך היום:"); // אם לא מילא, הצג הודעה שתעודד את המשתמש למלא
+        setDailyStatus("עוד לא התחלת לעקוב אחרי צריכת הקפה שלך היום:"); 
       }
     } catch (error) {
       console.error("❌ שגיאה בבדיקת הסקירה היומית:", error);
@@ -159,67 +158,79 @@ export default function HomeScreen() {
     }
   };
 
-useEffect(() => {
-  const loadUser = async () => {
-    try {
-      const userId = await AsyncStorage.getItem("userId");
-      const today = new Date().toISOString().split("T")[0];
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("userId");
+        const today = new Date().toISOString().split("T")[0];
 
-      // שלב 1: שליפת משתמש
-      const response = await axios.get(
-        `${BASE_URL}/api/auth/get-user/${userId}`
-      );
-
-      if (response.data.success) {
-        setUser(response.data.user);
-
-        // שלב 2: בדיקת הסקירה היומית
-        await checkDailyData();
-
-        // שלב 3: שליפת הסקירה הכללית
-        const surveyResponse = await axios.get(
-          `${BASE_URL}/api/generalData/get-survey/${userId}`
-        );
-        const survey = surveyResponse.data?.survey;
-        setGeneralSurvey(survey);
-
-        // שלב 4: שליפת הסקירה היומית מהיום
-        const dailyRes = await axios.get(
-          `${BASE_URL}/api/dailyData/get/${userId}/${today}`
-        );
-        const dailyData = dailyRes.data?.dailyData;
-
-        // שלב 5: בדיקה אם תזכורות מותאמות כבר נשלחו היום
-        const alreadyScheduledCustom = await AsyncStorage.getItem(
-          `customRemindersScheduled_${today}`
+        // שלב 1: שליפת משתמש
+        const response = await axios.get(
+          `${BASE_URL}/api/auth/get-user/${userId}`
         );
 
-        if (!alreadyScheduledCustom) {
-          const customReminderInput = {
-            drankCoffee: dailyData?.drankCoffee ?? true,
-            pattern: survey?.pattern,
-            mood: dailyData?.mood,
-            tirednessLevel: dailyData?.tirednessLevel,
-            wantsToReduce: survey?.wantsToReduce,
-            consumptionTime: survey?.consumptionTime,
-          };
+        if (response.data.success) {
+          setUser(response.data.user);
 
-          await scheduleCustomReminders(customReminderInput);
-          await AsyncStorage.setItem(`customRemindersScheduled_${today}`, "true");
-        } else {
-          console.log("🔁 תזכורות מותאמות כבר הוגדרו היום");
+          // שלב 2: בדיקת הסקירה היומית
+          await checkDailyData();
+
+          // שלב 3: שליפת הסקירה הכללית
+          const surveyResponse = await axios.get(
+            `${BASE_URL}/api/generalData/get-survey/${userId}`
+          );
+          const survey = surveyResponse.data?.survey;
+          setGeneralSurvey(survey);
+
+          // שלב 4: שליפת הסקירה היומית מהיום
+          let dailyData = null;
+
+          try {
+            const dailyRes = await axios.get(
+              `${BASE_URL}/api/dailyData/get/${userId}/${today}`
+            );
+            dailyData = dailyRes.data?.dailyData;
+          } catch (error) {
+            if (error.response?.status === 404) {
+              console.log("📭 הסקירה היומית של היום לא קיימת עדיין.");
+            } else {
+              console.error("❌ שגיאה בלתי צפויה בשליפת הסקירה היומית:", error);
+            }
+          }
+
+          // שלב 5: בדיקה אם תזכורות מותאמות כבר נשלחו היום
+          const alreadyScheduledCustom = await AsyncStorage.getItem(
+            `customRemindersScheduled_${today}`
+          );
+
+          if (!alreadyScheduledCustom) {
+            const customReminderInput = {
+              drankCoffee: dailyData?.drankCoffee ?? true,
+              pattern: survey?.pattern,
+              mood: dailyData?.mood,
+              tirednessLevel: dailyData?.tirednessLevel,
+              wantsToReduce: survey?.wantsToReduce,
+              consumptionTime: survey?.consumptionTime,
+            };
+
+            await scheduleCustomReminders(customReminderInput);
+            await AsyncStorage.setItem(
+              `customRemindersScheduled_${today}`,
+              "true"
+            );
+          } else {
+            console.log("🔁 תזכורות מותאמות כבר הוגדרו היום");
+          }
         }
+      } catch (err) {
+        console.error("❌ שגיאה בטעינת המשתמש או הסקרים:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("❌ שגיאה בטעינת המשתמש או הסקרים:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  loadUser();
-}, []);
-
+    loadUser();
+  }, []);
 
   useEffect(() => {
     const requestNotificationPermission = async () => {

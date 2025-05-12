@@ -43,6 +43,52 @@ export default function ExploreScreen() {
     balanced: "צריכה מאוזנת",
     unknown: "לא זוהה דפוס",
   };
+  const handleFeedbackSubmit = async () => {
+    const userId = await AsyncStorage.getItem("userId");
+    const today = new Date().toISOString().split("T")[0];
+
+    try {
+      const recommendationText = dailyRecommendations[0]?.text;
+      if (!recommendationText || !relevanceAnswer || !appliedAnswer) {
+        Alert.alert("שגיאה", "נא למלא את שני השדות לפני השליחה");
+        return;
+      }
+
+      await axios.put(`${BASE_URL}/api/dailypattern/feedback/${userId}`, {
+        date: today,
+        recommendationText,
+        relevance: relevanceAnswer,
+        applied: appliedAnswer,
+      });
+
+      console.log(
+        "📡 שולחת PUT לכתובת:",
+        `${BASE_URL}/api/dailypattern/feedback/${userId}`
+      );
+      console.log("📤 נשלח לשרת:", {
+        date: today,
+        recommendationText,
+        relevance: relevanceAnswer,
+        applied: appliedAnswer,
+      });
+
+      Alert.alert("✅ נשמר", "המשוב נשמר בהצלחה");
+    } catch (error) {
+      console.error("❌ שגיאה בשמירת משוב:", error);
+      console.log(
+        "📡 שולחת PUT לכתובת:",
+        `${BASE_URL}/api/dailypattern/feedback/${userId}`
+      );
+      console.log("📤 נשלח לשרת:", {
+        date: today,
+        recommendationText,
+        relevance: relevanceAnswer,
+        applied: appliedAnswer,
+      });
+
+      Alert.alert("שגיאה", "אירעה שגיאה בעת שמירת המשוב");
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -74,7 +120,7 @@ export default function ExploreScreen() {
               (r) => r.source === "combined"
             )
           );
-        console.log("🎯 תובנות יומיות מהשרת:", dailyResponse.data.insights);
+          // console.log("🎯 תובנות יומיות מהשרת:", dailyResponse.data.insights);
 
           const insightRes = await axios.get(
             `${BASE_URL}/api/pattern/get-insights/${userId}?type=general`
@@ -93,8 +139,6 @@ export default function ExploreScreen() {
       analyzeAndFetch();
     }, [])
   );
-
-  const handleFeedbackSubmit = async () => {};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
