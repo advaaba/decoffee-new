@@ -102,61 +102,61 @@ export default function HistoryDailyData() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>📚 היסטוריית סקירות יומיות</Text>
-      <Text style={styles.instructions}>
-        ניתן ללחוץ על תובנה או המלצה כדי לקרוא את כולה
-      </Text>
+
       {history.length === 0 ? (
         <Text style={styles.empty}>אין עדיין תובנות והמלצות יומיות</Text>
       ) : (
-        history.map((entry, idx) => (
-          <View
-            key={idx}
-            style={[
-              styles.card,
-              { backgroundColor: idx % 2 === 0 ? "#f2f2f2" : "#f2f2f2" },
-            ]}
-          >
-            <Text style={styles.date}> {entry.date}</Text>
+        <>
+          <Text style={styles.instructions}>
+            ניתן ללחוץ על תובנה או המלצה כדי לקרוא את כולה
+          </Text>
 
-            <Text style={styles.subtitle}> תובנות</Text>
-            {entry.insights.map((text, i) => {
-              const id = `${idx}-insight-${i}`;
-              const isExpanded = expandedIndexes.includes(id);
-              const displayText =
-                isExpanded || text.length <= 30
-                  ? text
-                  : text.substring(0, 30) + "...";
+          {history.map((entry, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.card,
+                { backgroundColor: idx % 2 === 0 ? "#f2f2f2" : "#f2f2f2" },
+              ]}
+            >
+              <Text style={styles.date}> {entry.date}</Text>
 
-              return (
-                <Pressable key={id} onPress={() => toggleExpand(id)}>
-                  <Text style={styles.insight}>
-                    - {displayText}
-                  </Text>
-                </Pressable>
-              );
-            })}
+              <Text style={styles.subtitle}> תובנות</Text>
+              {entry.insights.map((text, i) => {
+                const id = `${idx}-insight-${i}`;
+                const isExpanded = expandedIndexes.includes(id);
+                const displayText =
+                  isExpanded || text.length <= 30
+                    ? text
+                    : text.substring(0, 30) + "...";
 
-            <Text style={styles.subtitle}> המלצות</Text>
-            {entry.recommendations.map((text, i) => {
-              const id = `${idx}-rec-${i}`;
-              const isExpanded = expandedIndexes.includes(id);
-              const displayText =
-                isExpanded || text.length <= 30
-                  ? text
-                  : text.substring(0, 30) + "...";
+                return (
+                  <Pressable key={id} onPress={() => toggleExpand(id)}>
+                    <Text style={styles.insight}>- {displayText}</Text>
+                  </Pressable>
+                );
+              })}
 
-              return (
-                <Pressable key={id} onPress={() => toggleExpand(id)}>
-                  <Text style={styles.recommendation}>
-                    - {displayText}
-                  </Text>
-                </Pressable>
-              );
-            })}
+              <Text style={styles.subtitle}> המלצות</Text>
+              {entry.recommendations.map((text, i) => {
+                const id = `${idx}-rec-${i}`;
+                const isExpanded = expandedIndexes.includes(id);
+                const displayText =
+                  isExpanded || text.length <= 30
+                    ? text
+                    : text.substring(0, 30) + "...";
 
-            <View style={styles.separator} />
-          </View>
-        ))
+                return (
+                  <Pressable key={id} onPress={() => toggleExpand(id)}>
+                    <Text style={styles.recommendation}>- {displayText}</Text>
+                  </Pressable>
+                );
+              })}
+
+              <View style={styles.separator} />
+            </View>
+          ))}
+        </>
       )}
     </ScrollView>
   );

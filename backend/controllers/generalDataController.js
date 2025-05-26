@@ -5,10 +5,6 @@ const updateCoffeeSurvey = async (req, res) => {
     const { userId } = req.params;
     const surveyData = req.body;
 
-    console.log("📥 userId שהתקבל:", userId);
-    console.log("📥 surveyData שהתקבל:", JSON.stringify(surveyData, null, 2));
-    
-
     if (!userId) {
       return res
         .status(400)
@@ -20,7 +16,12 @@ const updateCoffeeSurvey = async (req, res) => {
 
     if (existingSurvey) {
       // עדכון הסקירה הקיימת
-      await CoffeeSurvey.updateOne({ userId }, surveyData);
+      await CoffeeSurvey.findOneAndUpdate(
+        { userId },
+        { $set: surveyData },
+        { new: true }
+      );
+
       return res.json({ success: true, message: "✅ הסקירה עודכנה בהצלחה" });
     }
 
@@ -56,6 +57,5 @@ const getSurveyByUserId = async (req, res) => {
       .json({ success: false, message: "❌ שגיאה בשרת", error: error.message });
   }
 };
-
 
 module.exports = { updateCoffeeSurvey, getSurveyByUserId };

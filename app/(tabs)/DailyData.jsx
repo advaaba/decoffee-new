@@ -8,7 +8,6 @@ export default function DailyData({ dailyData }) {
   if (!dailyData) return <Text>לא קיימת סקירה להצגה.</Text>;
 
   const handleEdit = () => {
-    console.log("🔄");
     router.push({
       pathname: "/(tabs)/create",
       params: {
@@ -16,34 +15,33 @@ export default function DailyData({ dailyData }) {
         mood: dailyData.mood,
         focusLevel: dailyData.focusLevel,
         tirednessLevel: dailyData.tirednessLevel,
-        drankCoffee: dailyData.drankCoffee.toString(), 
+        drankCoffee: dailyData.drankCoffee.toString(),
         ...(dailyData.drankCoffee
           ? { coffeeDetails: JSON.stringify(dailyData.coffeeDetails) }
           : { noCoffeeDetails: JSON.stringify(dailyData.noCoffeeDetails) }),
       },
     });
-    
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📋 סקירה יומית</Text>
+      <Text style={styles.title}> סקירה יומית</Text>
 
-      <Item label=" שעות שינה" value={dailyData.sleepHours} />
-      <Item label=" מצב רוח" value={translateRating(dailyData.mood)} />
+      <Item label="שעות שינה" value={dailyData.sleepHours} />
+      <Item label="מצב רוח" value={translateArrayOrSingle(dailyData.mood)} />
       <Item
-        label=" רמת ריכוז"
-        value={translateRating(dailyData.focusLevel)}
+        label="רמת ריכוז"
+        value={translateArrayOrSingle(dailyData.focusLevel)}
       />
       <Item
-        label=" רמת עייפות"
-        value={translateRating(dailyData.tirednessLevel)}
+        label="רמת עייפות"
+        value={translateArrayOrSingle(dailyData.tirednessLevel)}
       />
-      <Item label=" שתה קפה" value={dailyData.drankCoffee ? "כן" : "לא"} />
+      <Item label="שתה קפה" value={dailyData.drankCoffee ? "כן" : "לא"} />
 
       {dailyData.drankCoffee && dailyData.coffeeDetails ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}> 🔵 פרטי שתיית קפה:</Text>
+          <Text style={styles.sectionTitle}>🔵 פרטי שתיית קפה:</Text>
           <Item label="מספר כוסות" value={dailyData.coffeeDetails.cups} />
           <Item
             label="סוגי קפה"
@@ -51,16 +49,19 @@ export default function DailyData({ dailyData }) {
           />
           <Item
             label="זמני שתייה"
-            value={(dailyData.coffeeDetails.consumptionTime || []).join(", ")}
+            value={translateTimeOfDay(
+              dailyData.coffeeDetails.consumptionTime || []
+            )}
           />
+
           <Item label="סיבה" value={dailyData.coffeeDetails.reason} />
           <Item
             label="השפעה מורגשת"
-            value={dailyData.coffeeDetails.feltEffect}
+            value={translateYesNo(dailyData.coffeeDetails.feltEffect)}
           />
           <Item
             label="צורך מיוחד"
-            value={dailyData.coffeeDetails.specialNeed}
+            value={translateYesNo(dailyData.coffeeDetails.specialNeed)}
           />
           {dailyData.coffeeDetails.specialNeed === "yes" && (
             <Item
@@ -70,11 +71,11 @@ export default function DailyData({ dailyData }) {
           )}
           <Item
             label="שקל להפחית"
-            value={dailyData.coffeeDetails.consideredReducing}
+            value={translateYesNo(dailyData.coffeeDetails.consideredReducing)}
           />
           <Item
             label="רוצה להפחית מחר"
-            value={dailyData.coffeeDetails.wantToReduceTomorrow}
+            value={translateYesNo(dailyData.coffeeDetails.wantToReduceTomorrow)}
           />
         </View>
       ) : dailyData.noCoffeeDetails ? (
@@ -86,7 +87,7 @@ export default function DailyData({ dailyData }) {
           />
           <Item
             label="שקל לשתות"
-            value={dailyData.noCoffeeDetails.consideredDrinking}
+            value={translateYesNo(dailyData.noCoffeeDetails.consideredDrinking)}
           />
           <Item
             label="סיבת שיקול"
@@ -94,7 +95,9 @@ export default function DailyData({ dailyData }) {
           />
           <Item
             label="האם ישתה בהמשך היום"
-            value={dailyData.noCoffeeDetails.willDrinkLater}
+            value={translateYesNoMaybe(
+              dailyData.noCoffeeDetails.willDrinkLater
+            )}
           />
           <Item
             label="סיבה לכך"
@@ -106,15 +109,19 @@ export default function DailyData({ dailyData }) {
           />
           <Item
             label="בחירה מודעת"
-            value={dailyData.noCoffeeDetails.consciousDecision}
+            value={translateYesNo(dailyData.noCoffeeDetails.consciousDecision)}
           />
           <Item
             label="ישתה מחר"
-            value={dailyData.noCoffeeDetails.willDrinkTomorrow}
+            value={translateYesNoMaybe(
+              dailyData.noCoffeeDetails.willDrinkTomorrow
+            )}
           />
           <Item
             label="רוצה להמשיך בלי קפה"
-            value={dailyData.noCoffeeDetails.wantToContinueNoCoffee}
+            value={translateYesNo(
+              dailyData.noCoffeeDetails.wantToContinueNoCoffee
+            )}
           />
         </View>
       ) : null}
@@ -133,21 +140,57 @@ function Item({ label, value }) {
   );
 }
 
-function translateRating(value) {
-  switch (value) {
-    case "great":
-      return "מצוין";
-    case "good":
-      return "טוב";
-    case "okay":
-      return "בסדר";
-    case "bad":
-      return "רע";
-    case "terrible":
-      return "נורא";
-    default:
-      return value;
+function translateArrayOrSingle(value) {
+  const map = {
+    great: "מצוין",
+    good: "טוב",
+    okay: "בסדר",
+    bad: "רע",
+    terrible: "נורא",
+    focused: "מרוכז",
+    distracted: "מוסח",
+    tired: "עייף",
+    fresh: "רענן",
+    stressed: "לחוץ",
+    low: "ירוד",
+  };
+
+  if (Array.isArray(value)) {
+    return value.map((v) => map[v] || v).join(", ");
   }
+  return map[value] || value;
+}
+
+function translateYesNo(value) {
+  const map = {
+    yes: "כן",
+    no: "לא",
+  };
+  return map[value] || value;
+}
+
+function translateYesNoMaybe(value) {
+  const map = {
+    yes: "כן",
+    no: "לא",
+    "don't know": "לא בטוח",
+  };
+  return map[value] || value;
+}
+
+function translateTimeOfDay(time) {
+  const map = {
+    Morning: "בוקר",
+    Afternoon: "צהריים",
+    evening: "ערב",
+    night: "לילה",
+  };
+
+  if (Array.isArray(time)) {
+    return time.map((t) => map[t] || t).join(", ");
+  }
+
+  return map[time] || time;
 }
 
 const styles = StyleSheet.create({

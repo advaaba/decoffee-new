@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import BASE_URL from "../../utils/apiConfig";
 import HistoryDailyData from "./historyDailyData";
+import PatternBarChart from "./PatternBarChart";
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function ExploreScreen() {
   const [dailyInsights, setDailyInsights] = useState([]);
   const [dailyRecommendations, setDailyRecommendations] = useState([]);
   const [hasTodayDailyData, setHasTodayDailyData] = useState(null);
+  const [patternCounts, setPatternCounts] = useState({});
 
   const yesNoMaybeOptions = [
     { id: "yes", label: "כן", value: "yes" },
@@ -43,6 +45,14 @@ export default function ExploreScreen() {
     balanced: "צריכה מאוזנת",
     unknown: "לא זוהה דפוס",
   };
+
+  const testPatterns = {
+    fatigue_response: 5,
+    morning_routine: 3,
+    considered_but_avoided: 2,
+    habitual_drinker: 1,
+  };
+
   const handleFeedbackSubmit = async () => {
     const userId = await AsyncStorage.getItem("userId");
     const today = new Date().toISOString().split("T")[0];
@@ -120,8 +130,7 @@ export default function ExploreScreen() {
               (r) => r.source === "combined"
             )
           );
-          // console.log("🎯 תובנות יומיות מהשרת:", dailyResponse.data.insights);
-
+        
           const insightRes = await axios.get(
             `${BASE_URL}/api/pattern/get-insights/${userId}?type=general`
           );
@@ -240,6 +249,7 @@ export default function ExploreScreen() {
           טרם מולאו תובנות או המלצות. חזור/י לכאן לאחר מילוי הסקירה.
         </Text>
       )}
+      <PatternBarChart patternCounts={testPatterns} />
       <HistoryDailyData />
     </ScrollView>
   );

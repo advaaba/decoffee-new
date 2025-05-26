@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import YesCoffeeToday from "./YesCoffeeToday";
 import NoCoffeeToday from "./NoCoffeeToday";
@@ -145,19 +146,21 @@ export default function DailyQuestions({ isEditMode, editParams }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
+        {isEditMode && (
+          <View style={styles.exitButtonWrapper}>
+            <TouchableOpacity
+              style={styles.exitEditButton}
+              onPress={exitEditMode}
+            >
+              <Text style={styles.exitEditText}> סגירת מצב עריכה</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <Text style={styles.title}>סקירת הקפה היומי</Text>
         <Text style={styles.Textparagraph}>
           *עלייך למלא את כל השדות כדי לשלוח סקירה יומית מלאה!
         </Text>
-        {isEditMode && (
-          <View style={{ marginTop: 20 }}>
-            <Button
-              title="🔙 יציאה ממצב עריכה"
-              onPress={exitEditMode}
-              color="red"
-            />
-          </View>
-        )}
         <Text style={styles.label}>כמה שעות ישנת היום?</Text>
         <View style={styles.sleepTimeRow}>
           <Dropdown
@@ -339,5 +342,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 18,
     color: "#4CAF50",
+  },
+  exitButtonWrapper: {
+    alignSelf: "flex-end", // מיישר את הכפתור לימין
+    marginBottom: 10,
+  },
+
+  exitEditButton: {
+    backgroundColor: "#f8d7da", // רקע אדום בהיר
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 3,
+  },
+
+  exitEditText: {
+    fontSize: 14,
+    color: "#d32f2f",
+    fontWeight: "600",
   },
 });

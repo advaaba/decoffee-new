@@ -10,7 +10,6 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 exports.analyzeAndSaveUserPattern = async (req, res) => {
   try {
     const { userId } = req.body;
-
     const user = await UserModel.findOne({ userId });
     const general = await GeneralDataModel.findOne({ userId });
 
@@ -90,37 +89,56 @@ ${JSON.stringify(userData, null, 2)}
 
     const { pattern, explanation } = parsedPattern;
     userData.pattern = pattern;
-
     const { insight, recommendation } = runInitialAnalysis(userData);
 
-    await InsightModel.findOneAndUpdate(
-      { userId },
-      {
-        $push: {
-          insights: [
-            { text: explanation, type: "gpt_explanation" },
-            { text: insight, type: "general" },
-          ],
-        },
-        $set: { pattern },
-        $setOnInsert: { userId },
-      },
-      { upsert: true, new: true }
-    );
+    const existingInsight = await InsightModel.findOne({
+      userId,
+      "insights.type": "general",
+    });
 
-    await RecommendationModel.findOneAndUpdate(
-      { userId },
-      {
-        $push: {
-          recommendations: [{ text: recommendation, type: "general" }],
+    if (existingInsight) {
+      await InsightModel.updateOne(
+        { userId, "insights.type": "general" },
+        { $set: { "insights.$.text": insight } }
+      );
+    } else {
+      await InsightModel.updateOne(
+        { userId },
+        {
+          $push: {
+            insights: [
+              { text: explanation, type: "gpt_explanation" },
+              { text: insight, type: "general" },
+            ],
+          },
+          $set: { pattern },
         },
-        $set: { pattern: pattern },
-        $setOnInsert: { userId },
-      },
-      { upsert: true, new: true }
-    );
+        { upsert: true }
+      );
+    }
+    const existingRecommendation = await RecommendationModel.findOne({
+      userId,
+      "recommendations.type": "general",
+    });
 
-    
+    if (existingRecommendation) {
+      await RecommendationModel.updateOne(
+        { userId, "recommendations.type": "general" },
+        { $set: { "recommendations.$.text": recommendation } }
+      );
+    } else {
+      await RecommendationModel.updateOne(
+        { userId },
+        {
+          $push: {
+            recommendations: [{ text: recommendation, type: "general" }],
+          },
+          $set: { pattern },
+        },
+        { upsert: true }
+      );
+    }
+
     res.status(200).json({
       success: true,
       pattern,
@@ -142,17 +160,20 @@ exports.getUserInsightsAndRecommendations = async (req, res) => {
     const insightDoc = await InsightModel.findOne({ userId });
     const recommendationDoc = await RecommendationModel.findOne({ userId });
 
-    const insights = (insightDoc?.insights || []).filter(i => i.type === type);
-    const recommendations = (recommendationDoc?.recommendations || []).filter(r => r.type === type);
+    const insights = (insightDoc?.insights || []).filter(
+      (i) => i.type === type
+    );
+    const recommendations = (recommendationDoc?.recommendations || []).filter(
+      (r) => r.type === type
+    );
 
     res.status(200).json({
       insights,
       recommendations,
-      pattern: insightDoc?.pattern || null
+      pattern: insightDoc?.pattern || null,
     });
   } catch (err) {
     console.error("❌ שגיאה בשליפת התובנות וההמלצות:", err);
     res.status(500).json({ error: "שגיאה בשליפת התובנות וההמלצות" });
   }
 };
-

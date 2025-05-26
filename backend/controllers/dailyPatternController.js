@@ -7,6 +7,23 @@ const GeneralDataModel = require("../models/GeneralData");
 const UserModel = require("../models/User");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const dailyPatternLabels = {
+  pregnant_fatigue_conflict: "עייפות בהריון – קונפליקט עם קפאין",
+  migraine_fatigue_response: "עייפות עם נטייה למיגרנות",
+  cardiac_fatigue_response: "עייפות עם מצב לבבי",
+  low_activity_fatigue_response: "עייפות עם רמת פעילות נמוכה",
+  high_activity_fatigue_response: "עייפות עם רמת פעילות גבוהה",
+  fatigue_response: "תגובה לעייפות",
+  morning_routine: "שגרה בוקרית",
+  habitual_drinker: "שתייה מתוך הרגל",
+  general_consumption: "שתייה כללית",
+  avoidance_due_to_physical_effects: "הימנעות עקב השפעה פיזית",
+  avoidance_due_to_mental_effects: "הימנעות עקב השפעה מנטלית",
+  conscious_no_coffee: "החלטה מודעת להימנע מקפה",
+  considered_but_avoided: "שקל/ה אך נמנע/ה",
+  no_coffee_unintentional: "לא שתה – ללא כוונה מיוחדת",
+  unknown: "דפוס לא מזוהה",
+};
 
 exports.analyzeAndSaveDailyPattern = async (req, res) => {
   try {
@@ -21,7 +38,7 @@ exports.analyzeAndSaveDailyPattern = async (req, res) => {
     }
     const generalData = await GeneralDataModel.findOne({ userId });
     const user = await UserModel.findOne({ userId });
-
+    
     const {
       traverseTree,
       dailyDecisionTree,
@@ -34,6 +51,15 @@ exports.analyzeAndSaveDailyPattern = async (req, res) => {
         user: user?.toObject?.() || {},
       }
     );
+
+    const previousInsights = await InsightModel.findOne({ userId });
+    const previousPattern = previousInsights?.pattern;
+
+    let patternChanged = false;
+    if (previousPattern && previousPattern !== pattern) {
+      patternChanged = true;
+      console.log(`📈 שינוי בדפוס: היה ${previousPattern}, עכשיו ${pattern}`);
+    }
 
     const gptPrompt = `
 נתונים יומיים של משתמש:
@@ -65,7 +91,6 @@ ${
         messages: [{ role: "user", content: gptPrompt }],
         temperature: 0.3,
       });
-
       const gptText = gptResponse.choices[0].message.content.trim();
       const match = gptText.match(/תובנה:\s*(.+?)\s*המלצה:\s*(.+)/s);
       if (match) {
@@ -90,11 +115,21 @@ ${
       {
         $push: {
           insights: [
-            { text: insight, type: "daily", source: "algorithm" },
+            { text: insight, type: "daily", source: "algorithm", date },
             ...(gptInsight
-              ? [{ text: gptInsight, type: "daily", source: "openai" }]
+              ? [{ text: gptInsight, type: "daily", source: "openai", date }]
               : []),
-            { text: finalInsight, type: "daily", source: "combined" },
+            { text: finalInsight, type: "daily", source: "combined", date },
+            ...(patternChanged
+              ? [
+                  {
+                   text: ` שינוי בדפוס היומי: מ-"${dailyPatternLabels[previousPattern] || previousPattern}" ל-"${dailyPatternLabels[pattern] || pattern}".`,
+                    type: "daily",
+                    source: "system",
+                    date,
+                  },
+                ]
+              : []),
           ],
         },
         $set: { pattern },
@@ -108,11 +143,23 @@ ${
       {
         $push: {
           recommendations: [
-            { text: recommendation, type: "daily", source: "algorithm" },
+            { text: recommendation, type: "daily", source: "algorithm", date },
             ...(gptRecommendation
-              ? [{ text: gptRecommendation, type: "daily", source: "openai" }]
+              ? [
+                  {
+                    text: gptRecommendation,
+                    type: "daily",
+                    source: "openai",
+                    date,
+                  },
+                ]
               : []),
-            { text: finalRecommendation, type: "daily", source: "combined" },
+            {
+              text: finalRecommendation,
+              type: "daily",
+              source: "combined",
+              date,
+            },
           ],
         },
         $set: { pattern },
@@ -124,11 +171,12 @@ ${
     res.status(200).json({
       success: true,
       pattern,
+      patternChanged,
       insights: [finalInsight],
       recommendations: [{ text: finalRecommendation }],
     });
   } catch (error) {
-    console.error("❌ שגיאה באבחון דפוס יומי:", error);
+    console.error("❌ שגיאה באבחון הדפוס היומי:", error);
     res.status(500).json({ success: false, error: "שגיאה באבחון הדפוס היומי" });
   }
 };
