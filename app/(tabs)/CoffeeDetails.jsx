@@ -419,11 +419,18 @@ export default function CoffeeDetails() {
         finalData.coffeeConsumption
       );
 
-      await axios.post(`${BASE_URL}/api/pattern/analyze`, {
-        userId,
-        data: finalData.coffeeConsumption
-      });      
+       const patternRes = await axios.post(`${BASE_URL}/api/pattern/analyze`, {
+      userId,
+      data: finalData.coffeeConsumption,
+    });
 
+    if (patternRes.data.action === "created") {
+    Alert.alert("✅ הסקירה נשמרה בהצלחה!");
+    } else if (patternRes.data.action === "updated") {
+      Alert.alert("✅ הסקירה עודכנה בהצלחה!");
+    } else {
+      Alert.alert("✅ הסקירה נשמרה בהצלחה!");
+    }
       resetForm();
       
       router.push("/coffee");

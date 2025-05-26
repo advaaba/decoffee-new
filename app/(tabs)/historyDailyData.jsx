@@ -16,6 +16,28 @@ export default function HistoryDailyData() {
   const [loading, setLoading] = useState(true);
   const [expandedIndexes, setExpandedIndexes] = useState([]);
 
+  const patternTranslations = {
+    morning_drinker: "שותה קפה בבוקר כדי להתעורר",
+    fatigue_based: "שתייה עקב עייפות",
+    fatigue_response: "תגובה לעייפות",
+    stress_drinker: "שתייה עקב מתח",
+    high_intake: "צריכה גבוהה לפי משקל",
+    habitual: "שתייה מתוך הרגל",
+    habitual_drinker: "שתייה מתוך הרגל",
+    considered_but_avoided: "שקל/ה אך נמנע/ה",
+    trying_to_reduce: "מנסה להפחית צריכה",
+    balanced: "צריכה מאוזנת",
+    pregnancy_limit_exceeded: "חריגה בהריון",
+    compensating_lifestyle: "פיצוי על חוסר תנועה",
+    health_risk: "סיכון בריאותי",
+    avoidance_due_to_physical_effects: "הימנעות עקב השפעה פיזית",
+    avoidance_due_to_mental_effects: "הימנעות עקב השפעה מנטלית",
+    conscious_no_coffee: "החלטה מודעת להימנע מקפה",
+    no_coffee_unintentional: "לא שתה – ללא כוונה מיוחדת",
+    general_consumption: "שתייה כללית / מסיבה אחרת",
+    unknown: "לא זוהה דפוס",
+  };
+
   useEffect(() => {
     const fetchHistory = async () => {
       const userId = await AsyncStorage.getItem("userId");
@@ -101,7 +123,7 @@ export default function HistoryDailyData() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📚 היסטוריית סקירות יומיות</Text>
+      <Text style={styles.title}> היסטוריית סקירות יומיות</Text>
 
       {history.length === 0 ? (
         <Text style={styles.empty}>אין עדיין תובנות והמלצות יומיות</Text>
@@ -145,7 +167,7 @@ export default function HistoryDailyData() {
                   isExpanded || text.length <= 30
                     ? text
                     : text.substring(0, 30) + "...";
-
+                const isPatternChange = text.includes("שינוי בדפוס היומי:");
                 return (
                   <Pressable key={id} onPress={() => toggleExpand(id)}>
                     <Text style={styles.recommendation}>- {displayText}</Text>

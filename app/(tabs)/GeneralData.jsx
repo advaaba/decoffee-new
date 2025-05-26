@@ -84,7 +84,7 @@ export default function GeneralData() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📋 סקירה כללית - נתוני קפה</Text>
+      <Text style={styles.title}> סקירה כללית - נתוני קפה</Text>
 
       <View style={styles.card}>
         <Text style={styles.label}> ממוצע כוסות ביום:</Text>

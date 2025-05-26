@@ -10,27 +10,27 @@ const dailyDecisionTree = {
             yes: {
               pattern: "pregnant_fatigue_conflict",
               insight: "שתית קפה כי את עייפה, אך בהריון – צריכת קפאין גבוהה אינה מומלצת.",
-              recommendation: "שקלי חלופות בטוחות יותר כמים מים קרים, מנוחה קלה או תה ללא קפאין.",
+              recommendation: "שקלי חלופות בטוחות יותר כמו מים קרים, מנוחה קלה או תה ללא קפאין.",
             },
             no: {
-              question: "user.customHealthDescription",
+              question: "generalData.customHealthDescription",
               branches: {
                 מיגרנות: {
                   pattern: "migraine_fatigue_response",
-                  insight: "שתית קפה כתגובה לעייפות, אבל לפי הדיווח על מיגרנות – קפאין עשוי להשפיע עלייך.",
+                  insight: "שתית קפה כתגובה לעייפות, אך לפי הדיווח על מיגרנות – קפאין עשוי להשפיע עלייך.",
                   recommendation: "עקבי אחרי התחושות – ייתכן שכדאי להגביל את הצריכה או לשלב חלופות.",
                 },
                 לב: {
                   pattern: "cardiac_fatigue_response",
                   insight: "שתית קפה מתוך עייפות, אך יש לך מצב לבבי – קפאין עלול להזיק.",
-                  recommendation: "מומלץ להיועץ עם רופא לגבי גבולות צריכת קפאין במצבך.",
+                  recommendation: "מומלץ להיוועץ עם רופא לגבי גבולות צריכת קפאין במצבך.",
                 },
                 default: {
                   question: "user.activityLevel",
                   branches: {
                     Low: {
                       pattern: "low_activity_fatigue_response",
-                      insight: "שתית קפה מעייפות, אבל רמת הפעילות שלך נמוכה – ייתכן זה תורם לתחושת העייפות.",
+                      insight: "שתית קפה מעייפות, אבל רמת הפעילות שלך נמוכה – ייתכן שזה תורם לתחושת העייפות.",
                       recommendation: "שקול/י להגביר פעילות יומית מתונה – זה עשוי להפחית את התלות בקפאין.",
                     },
                     High: {
@@ -49,23 +49,31 @@ const dailyDecisionTree = {
             },
           },
         },
-
         הרגל: {
-          question: "coffeeDetails.consumptionTime[0]",
+          question: "previousDaily.coffeeDetails.reason",
           branches: {
-            Morning: {
-              pattern: "morning_routine",
-              insight: "הקפה הוא חלק מהשגרה שלך בבוקר.",
-              recommendation: "שקול/י לגוון את שגרת הבוקר מדי פעם – תה, הליכה או מדיטציה.",
+            הרגל: {
+              pattern: "habitual_drinker",
+              insight: "גם היום וגם אתמול שתית קפה מתוך הרגל.",
+              recommendation: "שווה לבדוק אם ההרגל הזה משרת אותך או שכדאי לגוון.",
             },
             default: {
-              pattern: "habitual_drinker",
-              insight: "שתית קפה מתוך הרגל.",
-              recommendation: "נסה/י לזהות מתי באמת יש צורך בקפה ומתי זה רק דפוס.",
+              question: "coffeeDetails.consumptionTime[0]",
+              branches: {
+                Morning: {
+                  pattern: "morning_routine",
+                  insight: "הקפה הוא חלק מהשגרה שלך בבוקר.",
+                  recommendation: "שקול/י לגוון את שגרת הבוקר מדי פעם – תה, הליכה או מדיטציה.",
+                },
+                default: {
+                  pattern: "habitual_drinker",
+                  insight: "שתית קפה מתוך הרגל.",
+                  recommendation: "נסה/י לזהות מתי באמת יש צורך בקפה ומתי זה רק דפוס.",
+                },
+              },
             },
           },
         },
-
         default: {
           pattern: "general_consumption",
           insight: "שתית קפה מסיבה אחרת.",
@@ -73,7 +81,6 @@ const dailyDecisionTree = {
         },
       },
     },
-
     false: {
       question: "noCoffeeDetails.consciousDecision",
       branches: {
@@ -98,17 +105,17 @@ const dailyDecisionTree = {
           },
         },
         no: {
-          question: "noCoffeeDetails.consideredDrinking",
+          question: "previousDaily.drankCoffee",
           branches: {
-            yes: {
+            true: {
               pattern: "considered_but_avoided",
-              insight: "שקלת לשתות קפה אבל ויתרת.",
-              recommendation: "זה שלב חשוב בהתפתחות הרגל חדש – מעולה!",
+              insight: "אתמול שתית והיום לא – אולי יש התחלה של שינוי.",
+              recommendation: "שימי לב אם מדובר בהימנעות מודעת – מעולה להתחלה של שינוי.",
             },
-            default: {
+            false: {
               pattern: "no_coffee_unintentional",
-              insight: "לא שתית קפה – ייתכן בלי מודעות מיוחדת לכך.",
-              recommendation: "שקול/י האם היה צורך אמיתי, ואם לא – אולי הגוף מסתדר טוב גם בלי.",
+              insight: "כבר יום שני ברציפות לא שתית קפה – אולי זה הרגל חדש?",
+              recommendation: "בדקי איך זה משפיע עליך פיזית ונפשית.",
             },
           },
         },

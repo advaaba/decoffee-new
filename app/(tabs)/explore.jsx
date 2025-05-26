@@ -28,6 +28,9 @@ export default function ExploreScreen() {
   const [dailyRecommendations, setDailyRecommendations] = useState([]);
   const [hasTodayDailyData, setHasTodayDailyData] = useState(null);
   const [patternCounts, setPatternCounts] = useState({});
+  const [refreshHistoryTrigger, setRefreshHistoryTrigger] = useState(
+    Date.now()
+  );
 
   const yesNoMaybeOptions = [
     { id: "yes", label: "כן", value: "yes" },
@@ -38,11 +41,22 @@ export default function ExploreScreen() {
   const patternTranslations = {
     morning_drinker: "שותה קפה בבוקר כדי להתעורר",
     fatigue_based: "שתייה עקב עייפות",
+    fatigue_response: "תגובה לעייפות",
     stress_drinker: "שתייה עקב מתח",
     high_intake: "צריכה גבוהה לפי משקל",
     habitual: "שתייה מתוך הרגל",
+    habitual_drinker: "שתייה מתוך הרגל",
+    considered_but_avoided: "שקל/ה אך נמנע/ה",
     trying_to_reduce: "מנסה להפחית צריכה",
     balanced: "צריכה מאוזנת",
+    pregnancy_limit_exceeded: "חריגה בהריון",
+    compensating_lifestyle: "פיצוי על חוסר תנועה",
+    health_risk: "סיכון בריאותי",
+    avoidance_due_to_physical_effects: "הימנעות עקב השפעה פיזית",
+    avoidance_due_to_mental_effects: "הימנעות עקב השפעה מנטלית",
+    conscious_no_coffee: "החלטה מודעת להימנע מקפה",
+    no_coffee_unintentional: "לא שתה – ללא כוונה מיוחדת",
+    general_consumption: "שתייה כללית / מסיבה אחרת",
     unknown: "לא זוהה דפוס",
   };
 
@@ -119,7 +133,7 @@ export default function ExploreScreen() {
             `${BASE_URL}/api/dailypattern/get-insights/${userId}`,
             { params: { date: today } }
           );
-
+          setRefreshHistoryTrigger(Date.now());
           setDailyInsights(
             (dailyResponse.data.insights || []).filter(
               (i) => i.source === "combined"
@@ -130,7 +144,7 @@ export default function ExploreScreen() {
               (r) => r.source === "combined"
             )
           );
-        
+
           const insightRes = await axios.get(
             `${BASE_URL}/api/pattern/get-insights/${userId}?type=general`
           );
@@ -249,7 +263,10 @@ export default function ExploreScreen() {
           טרם מולאו תובנות או המלצות. חזור/י לכאן לאחר מילוי הסקירה.
         </Text>
       )}
-      <PatternBarChart patternCounts={testPatterns} />
+      {dailyInsights.length > 0 && (
+        <PatternBarChart patternCounts={testPatterns} />
+      )}
+
       <HistoryDailyData />
     </ScrollView>
   );

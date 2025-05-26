@@ -41,7 +41,7 @@ export default function HomeScreen() {
 
   const checkDailyData = async () => {
     const userId = await AsyncStorage.getItem("userId");
-    const today = new Date().toISOString().split("T")[0]; 
+    const today = new Date().toISOString().split("T")[0];
 
     try {
       const response = await axios.get(`${BASE_URL}/api/dailyData/check`, {
@@ -49,9 +49,9 @@ export default function HomeScreen() {
       });
 
       if (response.data.exists) {
-        setDailyStatus("מילאת את הסקירה היומית!"); 
+        setDailyStatus("מילאת את הסקירה היומית!");
       } else {
-        setDailyStatus("עוד לא התחלת לעקוב אחרי צריכת הקפה שלך היום:"); 
+        setDailyStatus("עוד לא התחלת לעקוב אחרי צריכת הקפה שלך היום:");
       }
     } catch (error) {
       console.error("❌ שגיאה בבדיקת הסקירה היומית:", error);
@@ -395,7 +395,32 @@ export default function HomeScreen() {
                           <Text style={styles.text}>{dailyStatus}</Text>
                           <View style={styles.buttonRightAlign}>
                             <TouchableOpacity
-                              onPress={() => router.push("/create")}
+                              onPress={() => {
+                                if (
+                                  !generalSurvey ||
+                                  Object.values(generalSurvey).every((value) =>
+                                    Array.isArray(value)
+                                      ? value.length === 0
+                                      : !value
+                                  )
+                                ) {
+                                  Alert.alert(
+                                    "השלמת הסקירה הכללית נחוצה",
+                                    "כדי להזין סקירה יומית, עליך להשלים קודם את הסקירה הכללית על הרגלי הקפה שלך.",
+                                    [
+                                      { text: "בטל", style: "cancel" },
+                                      {
+                                        text: "עבור לסקירה",
+                                        onPress: () =>
+                                          router.push("/CoffeeDetails"),
+                                      },
+                                    ],
+                                    { cancelable: true }
+                                  );
+                                } else {
+                                  router.push("/create");
+                                }
+                              }}
                               style={[styles.customButton, styles.greenButton]}
                             >
                               <Text style={styles.buttonText}>

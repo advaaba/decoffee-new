@@ -6,7 +6,7 @@ import {
   TextInput,
   ScrollView,
   Button,
-  Alert
+  Alert,
 } from "react-native";
 import RadioGroup from "react-native-radio-buttons-group";
 import { useRouter } from "expo-router";
@@ -27,12 +27,12 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
   const [consideredDrinkingReason, setConsideredDrinkingReason] = useState("");
   const [willDrinkLaterReason, setWillDrinkLaterReason] = useState("");
   const [formData, setFormData] = useState({});
-  
+
   console.log("🔵 קיבלתי את הנתונים מ-Create:", generalData);
   useEffect(() => {
     console.log("entryId שקיבלתי:", entryId);
   }, []);
-  
+
   useEffect(() => {
     const data = {
       feltWithoutCoffee,
@@ -45,17 +45,19 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
       willDrinkTomorrow,
       wantToContinueNoCoffee,
     };
-  
-    const isValid = feltWithoutCoffee.trim() !== "" &&
+
+    const isValid =
+      feltWithoutCoffee.trim() !== "" &&
       consideredDrinking &&
-      (consideredDrinking !== "yes" || consideredDrinkingReason.trim() !== "") &&
+      (consideredDrinking !== "yes" ||
+        consideredDrinkingReason.trim() !== "") &&
       willDrinkLater &&
       (willDrinkLater !== "yes" || willDrinkLaterReason.trim() !== "") &&
       reasonNotDrinking.trim() !== "" &&
       consciousDecision &&
       willDrinkTomorrow &&
       wantToContinueNoCoffee;
-  
+
     onDataChange && onDataChange({ data, isValid });
   }, [
     feltWithoutCoffee,
@@ -68,7 +70,6 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
     willDrinkTomorrow,
     wantToContinueNoCoffee,
   ]);
-  
 
   const isFormValid = useMemo(() => {
     return (
@@ -107,9 +108,8 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
   ];
 
   const handleDailyData = async () => {
-    
     const userId = await AsyncStorage.getItem("userId");
-  
+
     const finalData = {
       userId,
       date: new Date().toISOString().split("T")[0],
@@ -130,10 +130,31 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
         reasonNotDrinking,
         consciousDecision,
         willDrinkTomorrow,
-        wantToContinueNoCoffee
-      }
+        wantToContinueNoCoffee,
+      },
     };
-  
+
+    const surveyResponse = await axios.get(
+      `${BASE_URL}/api/generalData/get-survey/${userId}`
+    );
+
+    const survey = surveyResponse.data?.survey;
+
+    if (!survey || Object.keys(survey).length === 0) {
+      Alert.alert(
+        "השלמת הסקירה הכללית נחוצה",
+        "כדי להזין סקירה יומית, עליך להשלים קודם את הסקירה הכללית על הרגלי הקפה שלך.",
+        [
+          { text: "בטל", style: "cancel" },
+          {
+            text: "עבור לסקירה",
+            onPress: () => router.push("/CoffeeDetails"),
+          },
+        ],
+        { cancelable: true }
+      );
+      return;
+    }
 
     try {
       if (entryId) {
@@ -148,21 +169,17 @@ export default function NoCoffeeToday({ onDataChange, generalData, entryId }) {
         userId,
         date: new Date().toISOString().split("T")[0],
       });
-      
-      router.push("/(tabs)/create?reload=true");
 
+      router.push("/(tabs)/create?reload=true");
     } catch (err) {
       console.error("❌ שגיאה בשמירה:", err);
       Alert.alert("שגיאה", "משהו השתבש בעת השמירה.");
     }
-    
   };
-  
-  
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>🟢 לא שתית קפה היום –  מעולה! </Text>
+      <Text style={styles.title}>🟢 לא שתית קפה היום – מעולה! </Text>
 
       <Text style={styles.label}>איך הרגשת בלי קפה?</Text>
       <TextInput

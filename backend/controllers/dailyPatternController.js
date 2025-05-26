@@ -29,27 +29,33 @@ exports.analyzeAndSaveDailyPattern = async (req, res) => {
   try {
     const userId = String(req.body.userId);
     const date = req.body.date;
+    const incomingDailyData = req.body.dailyData;
+
+    // שלב 1: עדכון או יצירת סקירה יומית
+    await DailyDataModel.updateOne(
+      { userId, date },
+      { $set: incomingDailyData },
+      { upsert: true }
+    );
 
     const dailyData = await DailyDataModel.findOne({ userId, date });
-    if (!dailyData) {
-      return res
-        .status(404)
-        .json({ success: false, error: "סקירה יומית לא נמצאה" });
-    }
     const generalData = await GeneralDataModel.findOne({ userId });
     const user = await UserModel.findOne({ userId });
-    
-    const {
-      traverseTree,
-      dailyDecisionTree,
-    } = require("../analysis/dailyPattern");
+    const previousDailyData = await DailyDataModel.findOne({
+      userId,
+      date: { $lt: date },
+    }).sort({ date: -1 });
+
+    const analysisInput = {
+      ...dailyData.toObject(),
+      generalData: generalData?.toObject?.() || {},
+      user: user?.toObject?.() || {},
+      previousDaily: previousDailyData?.toObject?.() || null,
+    };
+
     const { pattern, insight, recommendation } = traverseTree(
       dailyDecisionTree,
-      {
-        ...dailyData.toObject(),
-        generalData: generalData?.toObject?.() || {},
-        user: user?.toObject?.() || {},
-      }
+      analysisInput
     );
 
     const previousInsights = await InsightModel.findOne({ userId });
@@ -61,6 +67,7 @@ exports.analyzeAndSaveDailyPattern = async (req, res) => {
       console.log(`📈 שינוי בדפוס: היה ${previousPattern}, עכשיו ${pattern}`);
     }
 
+    // GPT Prompt
     const gptPrompt = `
 נתונים יומיים של משתמש:
 - מצב רוח: ${dailyData.mood || "לא צויין"}
@@ -110,7 +117,40 @@ ${
       gptRecommendation ? " בנוסף, " + gptRecommendation : ""
     }`;
 
-    await InsightModel.findOneAndUpdate(
+    // שלב 2: מחיקת תובנות/המלצות קודמות לאותו יום
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    await InsightModel.updateOne(
+      { userId },
+      {
+        $pull: {
+          insights: {
+            type: "daily",
+            source: { $in: ["algorithm", "openai", "combined", "system"] },
+            date: { $gte: startOfDay, $lte: endOfDay },
+          },
+        },
+      }
+    );
+
+    await RecommendationModel.updateOne(
+      { userId },
+      {
+        $pull: {
+          recommendations: {
+            type: "daily",
+            source: { $in: ["algorithm", "openai", "combined"] },
+            date: { $gte: startOfDay, $lte: endOfDay },
+          },
+        },
+      }
+    );
+
+    // שלב 3: שמירת תובנות והמלצות חדשות
+    await InsightModel.updateOne(
       { userId },
       {
         $push: {
@@ -123,7 +163,9 @@ ${
             ...(patternChanged
               ? [
                   {
-                   text: ` שינוי בדפוס היומי: מ-"${dailyPatternLabels[previousPattern] || previousPattern}" ל-"${dailyPatternLabels[pattern] || pattern}".`,
+                    text: `שינוי בדפוס היומי: מ-"${
+                      dailyPatternLabels[previousPattern] || previousPattern
+                    }" ל-"${dailyPatternLabels[pattern] || pattern}".`,
                     type: "daily",
                     source: "system",
                     date,
@@ -135,10 +177,10 @@ ${
         $set: { pattern },
         $setOnInsert: { userId },
       },
-      { upsert: true, new: true }
+      { upsert: true }
     );
 
-    await RecommendationModel.findOneAndUpdate(
+    await RecommendationModel.updateOne(
       { userId },
       {
         $push: {
@@ -165,7 +207,7 @@ ${
         $set: { pattern },
         $setOnInsert: { userId },
       },
-      { upsert: true, new: true }
+      { upsert: true }
     );
 
     res.status(200).json({
@@ -224,10 +266,11 @@ exports.getDailyHistory = async (req, res) => {
     const recommendationDoc = await RecommendationModel.findOne({ userId });
 
     const insights = (insightDoc?.insights || []).filter(
-      (i) => i.type === "daily"
+      (i) => i.type === "daily" && i.source !== "combined"
     );
+
     const recommendations = (recommendationDoc?.recommendations || []).filter(
-      (r) => r.type === "daily"
+      (r) => r.type === "daily" && r.source !== "combined"
     );
 
     res.status(200).json({ insights, recommendations });

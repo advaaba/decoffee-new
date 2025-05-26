@@ -178,6 +178,28 @@ export default function YesCoffeeToday({ onDataChange, generalData, entryId }) {
       noCoffeeDetails: null,
     };
 
+    const surveyResponse = await axios.get(
+      `${BASE_URL}/api/generalData/get-survey/${userId}`
+    );
+
+    const survey = surveyResponse.data?.survey;
+
+    if (!survey || Object.keys(survey).length === 0) {
+      Alert.alert(
+        "השלמת הסקירה הכללית נחוצה",
+        "כדי להזין סקירה יומית, עליך להשלים קודם את הסקירה הכללית על הרגלי הקפה שלך.",
+        [
+          { text: "בטל", style: "cancel" },
+          {
+            text: "עבור לסקירה",
+            onPress: () => router.push("/CoffeeDetails"),
+          },
+        ],
+        { cancelable: true }
+      );
+      return;
+    }
+
     try {
       if (entryId) {
         await axios.put(`${BASE_URL}/api/dailyData/${entryId}`, finalData);
@@ -186,7 +208,7 @@ export default function YesCoffeeToday({ onDataChange, generalData, entryId }) {
         await axios.post(`${BASE_URL}/api/dailyData`, finalData);
         Alert.alert("✅ הסקירה נשמרה בהצלחה!");
       }
-      
+
       await axios.post(`${BASE_URL}/api/dailypattern/analyze`, {
         userId,
         date: new Date().toISOString().split("T")[0],
@@ -201,9 +223,7 @@ export default function YesCoffeeToday({ onDataChange, generalData, entryId }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>
-         🔵 שתית קפה היום? בוא נבדוק למה
-      </Text>
+      <Text style={styles.title}>🔵 שתית קפה היום? בוא נבדוק למה</Text>
 
       <Text style={styles.label}>כמה כוסות קפה שתית היום?</Text>
       <Dropdown
@@ -220,7 +240,7 @@ export default function YesCoffeeToday({ onDataChange, generalData, entryId }) {
 
       <Text style={styles.label}>איזה סוג קפה שתית?</Text>
       <MultiSelect
-         style={[styles.dropdown, { zIndex: 1000 }]}
+        style={[styles.dropdown, { zIndex: 1000 }]}
         data={coffeeOptions}
         labelField="label"
         valueField="value"
