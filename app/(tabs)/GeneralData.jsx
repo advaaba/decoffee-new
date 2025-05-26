@@ -11,7 +11,6 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BASE_URL from "../../utils/apiConfig";
 import { useRouter, useFocusEffect } from "expo-router";
-// הפוך את הכיווניות אם צריך (רק אם עדיין לא מוגדר מראש)
 I18nManager.forceRTL?.();
 
 export default function GeneralData() {
