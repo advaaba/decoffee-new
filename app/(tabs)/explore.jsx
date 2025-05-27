@@ -28,6 +28,8 @@ export default function ExploreScreen() {
   const [dailyRecommendations, setDailyRecommendations] = useState([]);
   const [hasTodayDailyData, setHasTodayDailyData] = useState(null);
   const [patternCounts, setPatternCounts] = useState({});
+  const [hasDailyHistory, setHasDailyHistory] = useState(false);
+
   const [refreshHistoryTrigger, setRefreshHistoryTrigger] = useState(
     Date.now()
   );
@@ -122,6 +124,12 @@ export default function ExploreScreen() {
 
         try {
           const today = new Date().toISOString().split("T")[0];
+          const historyRes = await axios.get(
+            `${BASE_URL}/api/dailypattern/history/${userId}`
+          );
+          if (historyRes.data?.insights?.length > 0) {
+            setHasDailyHistory(true);
+          }
 
           const checkDailyData = await axios.get(
             `${BASE_URL}/api/dailydata/check`,
@@ -263,9 +271,7 @@ export default function ExploreScreen() {
           טרם מולאו תובנות או המלצות. חזור/י לכאן לאחר מילוי הסקירה.
         </Text>
       )}
-      {dailyInsights.length > 0 && (
-        <PatternBarChart patternCounts={testPatterns} />
-      )}
+      {hasDailyHistory && <PatternBarChart patternCounts={testPatterns} />}
 
       <HistoryDailyData />
     </ScrollView>
