@@ -13,6 +13,7 @@ import { Dimensions } from "react-native";
 import BASE_URL from "../../utils/apiConfig";
 
 const screenWidth = Dimensions.get("window").width;
+const barSpacing = 150;
 
 const dailyPatternLabels = {
   morning_drinker: "שותה קפה בבוקר כדי להתעורר",
@@ -160,32 +161,44 @@ export default function PatternChartScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📊 התפלגות דפוסי שתייה</Text>
-
-      <BarChart
-        data={{
-          labels: chartLabels,
-          datasets: [{ data: chartData }],
-        }}
-        width={screenWidth - 30}
-        height={320}
-        fromZero
-        showValuesOnTopOfBars
-        chartConfig={{
-          backgroundGradientFrom: "#f4f4f4",
-          backgroundGradientTo: "#f4f4f4",
-          decimalPlaces: 0,
-          color: () => "#007bff",
-          labelColor: () => "#333",
-          propsForLabels: {
-            fontSize: 12,
-          },
-        }}
-        style={{
-          borderRadius: 16,
-        }}
-        // verticalLabelRotation={30}
-      />
+      <Text style={styles.title}> גרף דפוסי שתייה</Text>
+      <Text style={styles.instructions}>
+        גרף זה מציג את דפוסי השתייה שלך.{"\n"}
+        כדי לראות את כל הדפוסים, גלול ימינה
+      </Text>
+      <ScrollView horizontal={true} showsHorizontalScrollIndicator={true}>
+        <BarChart
+          data={{
+            labels: chartLabels,
+            datasets: [{ data: chartData }],
+          }}
+          width={chartLabels.length * barSpacing}
+          height={
+            chartData.length === 1 ? 250 : 250 + Math.max(...chartData) * 20
+          }
+          fromZero
+          withVerticalLabels={true}
+          // showValuesOnTopOfBars
+          withHorizontalLabels={true}
+          segments={Math.max(...chartData) < 4 ? 4 : Math.max(...chartData)}
+          chartConfig={{
+            backgroundGradientFrom: "#f4f4f4",
+            backgroundGradientTo: "#f4f4f4",
+            decimalPlaces: 0,
+            color: () => "#007bff",
+            labelColor: () => "#333",
+            formatYLabel: (val) => {
+              const rounded = Math.round(val);
+              return rounded >= 1 && rounded <= 5 ? `${rounded}` : "";
+            },
+          }}
+          style={{
+            borderRadius: 16,
+            marginRight: 10,
+          }}
+          verticalLabelRotation={0}
+        />
+      </ScrollView>
     </ScrollView>
   );
 }
@@ -201,11 +214,18 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     color: "#184e77",
+    textAlign: "center",
   },
   centered: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+  },
+  instructions: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 15,
+    color: "#444",
   },
 });

@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
     textAlign: "center",
-    color: "#0d47a1",
+    color: "#184e77",
   },
   instructions: {
     fontSize: 14,

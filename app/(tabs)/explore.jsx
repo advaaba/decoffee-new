@@ -29,6 +29,7 @@ export default function ExploreScreen() {
   const [hasTodayDailyData, setHasTodayDailyData] = useState(null);
   const [patternCounts, setPatternCounts] = useState({});
   const [hasDailyHistory, setHasDailyHistory] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   const [refreshHistoryTrigger, setRefreshHistoryTrigger] = useState(
     Date.now()
@@ -70,6 +71,11 @@ export default function ExploreScreen() {
   };
 
   const handleFeedbackSubmit = async () => {
+    if (feedbackSubmitted) {
+      Alert.alert("הודעה", "כבר מילאת משוב להיום.");
+      return;
+    }
+
     const userId = await AsyncStorage.getItem("userId");
     const today = new Date().toISOString().split("T")[0];
 
@@ -98,20 +104,11 @@ export default function ExploreScreen() {
         applied: appliedAnswer,
       });
 
+      setFeedbackSubmitted(true); // 🔒 ננעל לאחר שליחה מוצלחת
+
       Alert.alert("✅ נשמר", "המשוב נשמר בהצלחה");
     } catch (error) {
       console.error("❌ שגיאה בשמירת משוב:", error);
-      console.log(
-        "📡 שולחת PUT לכתובת:",
-        `${BASE_URL}/api/dailypattern/feedback/${userId}`
-      );
-      console.log("📤 נשלח לשרת:", {
-        date: today,
-        recommendationText,
-        relevance: relevanceAnswer,
-        applied: appliedAnswer,
-      });
-
       Alert.alert("שגיאה", "אירעה שגיאה בעת שמירת המשוב");
     }
   };
@@ -141,6 +138,13 @@ export default function ExploreScreen() {
             `${BASE_URL}/api/dailypattern/get-insights/${userId}`,
             { params: { date: today } }
           );
+          const feedback = dailyResponse.data.feedback;
+          if (feedback && feedback.relevance && feedback.applied) {
+            setFeedbackSubmitted(true);
+            setRelevanceAnswer(feedback.relevance);
+            setAppliedAnswer(feedback.applied);
+          }
+
           setRefreshHistoryTrigger(Date.now());
           setDailyInsights(
             (dailyResponse.data.insights || []).filter(
@@ -229,26 +233,37 @@ export default function ExploreScreen() {
           ))}
 
           <View style={styles.feedbackContainer}>
-            <Text style={styles.label}>האם ההמלצה רלוונטית עבורך?</Text>
-            <RadioGroup
-              radioButtons={yesNoMaybeOptions}
-              onPress={setRelevanceAnswer}
-              selectedId={relevanceAnswer}
-              layout="row"
-            />
+            {!feedbackSubmitted ? (
+              <>
+                <Text style={styles.label}>האם ההמלצה רלוונטית עבורך?</Text>
+                <RadioGroup
+                  radioButtons={yesNoMaybeOptions}
+                  onPress={setRelevanceAnswer}
+                  selectedId={relevanceAnswer}
+                  layout="row"
+                />
 
-            <Text style={styles.label}>האם יישמת את ההמלצה?</Text>
-            <RadioGroup
-              radioButtons={yesNoMaybeOptions}
-              onPress={setAppliedAnswer}
-              selectedId={appliedAnswer}
-              layout="row"
-            />
+                <Text style={styles.label}>האם יישמת את ההמלצה?</Text>
+                <RadioGroup
+                  radioButtons={yesNoMaybeOptions}
+                  onPress={setAppliedAnswer}
+                  selectedId={appliedAnswer}
+                  layout="row"
+                />
 
-            <View style={{ marginTop: 15 }}>
-              <Button title="שמור משוב" onPress={handleFeedbackSubmit} />
-            </View>
+                <View style={{ marginTop: 15 }}>
+                  <Button title="שמור משוב" onPress={handleFeedbackSubmit} />
+                </View>
+              </>
+            ) : (
+              <Text
+                style={{ fontSize: 16, textAlign: "center", color: "#555" }}
+              >
+                ✅ המשוב שלך נשמר. תודה!
+              </Text>
+            )}
           </View>
+
           {hasTodayDailyData === false && (
             <View style={styles.generalContainer}>
               <Text style={styles.title}>📅 סקירה יומית</Text>
@@ -272,7 +287,6 @@ export default function ExploreScreen() {
         </Text>
       )}
       {hasDailyHistory && <PatternBarChart patternCounts={testPatterns} />}
-
       <HistoryDailyData />
     </ScrollView>
   );

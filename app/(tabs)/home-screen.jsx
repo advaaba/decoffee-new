@@ -70,12 +70,16 @@ export default function HomeScreen() {
 
   const scheduleHourlyReminders = async () => {
     const intervals = [9, 11, 13, 15, 17, 19];
+    const now = new Date();
 
     for (let hour of intervals) {
       const date = new Date();
       date.setHours(hour, 0, 0, 0);
 
-      if (date > new Date()) {
+      // תשלח רק אם ההפרש גדול מ-5 דקות מהזמן הנוכחי
+      const msDiff = date.getTime() - now.getTime();
+
+      if (msDiff > 5 * 60 * 1000) {
         await Notifications.scheduleNotificationAsync({
           content: {
             title: "📋 תזכורת למעקב יומי",
@@ -83,10 +87,13 @@ export default function HomeScreen() {
           },
           trigger: { date },
         });
+
+        console.log(`📅 תזכורת הוגדרה ל־${hour}:00`);
+      } else {
+        console.log(`⏭️ דילוג על תזכורת בשעה ${hour}:00 (עבר הזמן)`);
       }
     }
 
-    console.log("📅 תזכורות כל שעתיים הוגדרו");
     await markRemindersScheduled();
   };
 
@@ -147,8 +154,8 @@ export default function HomeScreen() {
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "☕ בדיקה מיידית!",
-          body: "זו תזכורת שנשלחה עכשיו 🎯",
+          title: " בדיקה מיידית!",
+          body: "זו תזכורת שנשלחה עכשיו ",
         },
         trigger: null, // שולח את ההתראה מיידית
       });
@@ -233,45 +240,52 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    const requestNotificationPermission = async () => {
-      try {
-        const alreadyAsked = await AsyncStorage.getItem(
-          "hasAskedNotificationPermission"
-        );
-        if (alreadyAsked) {
-          console.log("🔔 כבר ביקשנו הרשאה להתראות.");
-          return;
-        }
+  const requestNotificationPermission = async () => {
+    try {
+      const alreadyAsked = await AsyncStorage.getItem("hasAskedNotificationPermission");
 
-        const { status: existingStatus } =
-          await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
+      const tokenResponse = await Notifications.getExpoPushTokenAsync();
+      const token = tokenResponse?.data;
+      const isTokenValid = token && token.startsWith("ExponentPushToken");
 
-        if (existingStatus !== "granted") {
-          const { status } = await Notifications.requestPermissionsAsync();
-          finalStatus = status;
-        }
-
-        if (finalStatus === "granted") {
-          console.log("🔔 קיבלנו הרשאת Notifications! שולחים הודעת תודה...");
-          const token = (await Notifications.getExpoPushTokenAsync()).data;
-          console.log("Expo Push Token:", token);
-          await saveExpoPushToken(token);
-        } else {
-          Alert.alert(
-            "שים לב",
-            "כדי לקבל תזכורות יומיות, נא לאשר קבלת התראות."
-          );
-        }
-
-        await AsyncStorage.setItem("hasAskedNotificationPermission", "true");
-      } catch (error) {
-        console.error("❌ שגיאה בבקשת הרשאות Notifications:", error);
+      if (alreadyAsked && isTokenValid) {
+        console.log("🔁 כבר ביקשנו הרשאה ויש טוקן תקף – שומרים אותו למשתמש הנוכחי");
+        await saveExpoPushToken(token);
+        return;
       }
-    };
 
-    requestNotificationPermission();
-  }, []);
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus === "granted") {
+        const newToken = (await Notifications.getExpoPushTokenAsync()).data;
+        console.log("🔔 קיבלנו הרשאה! הטוקן הוא:", newToken);
+
+        if (newToken && newToken.startsWith("ExponentPushToken")) {
+          await saveExpoPushToken(newToken);
+        } else {
+          console.warn("⚠️ הטוקן שהתקבל אינו תקף:", newToken);
+        }
+      } else {
+        Alert.alert(
+          "שים לב",
+          "כדי לקבל תזכורות יומיות, נא לאשר קבלת התראות."
+        );
+      }
+
+      await AsyncStorage.setItem("hasAskedNotificationPermission", "true");
+    } catch (error) {
+      console.error("❌ שגיאה בבקשת הרשאות Notifications:", error);
+    }
+  };
+
+  requestNotificationPermission();
+}, []);
 
   const handleLogout = () => {
     Alert.alert(
@@ -289,6 +303,7 @@ export default function HomeScreen() {
             try {
               await AsyncStorage.removeItem("userToken");
               await AsyncStorage.removeItem("userId");
+              await Notifications.cancelAllScheduledNotificationsAsync();
               router.replace("/open-screen");
             } catch (error) {
               console.error("❌ שגיאה בהתנתקות:", error);
@@ -299,6 +314,7 @@ export default function HomeScreen() {
       { cancelable: true }
     );
   };
+  
   useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener(
       (notification) => {
