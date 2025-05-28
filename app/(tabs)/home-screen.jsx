@@ -200,6 +200,15 @@ export default function HomeScreen() {
           } catch (error) {
             if (error.response?.status === 404) {
               console.log("📭 הסקירה היומית של היום לא קיימת עדיין.");
+
+              // שליחת תזכורת מיידית למילוי הסקירה
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: "📋 תזכורת מיידית",
+                  body: "טרם מילאת את הסקירה היומית שלך היום!",
+                },
+                trigger: null,
+              });
             } else {
               console.error("❌ שגיאה בלתי צפויה בשליפת הסקירה היומית:", error);
             }
@@ -240,52 +249,57 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-  const requestNotificationPermission = async () => {
-    try {
-      const alreadyAsked = await AsyncStorage.getItem("hasAskedNotificationPermission");
-
-      const tokenResponse = await Notifications.getExpoPushTokenAsync();
-      const token = tokenResponse?.data;
-      const isTokenValid = token && token.startsWith("ExponentPushToken");
-
-      if (alreadyAsked && isTokenValid) {
-        console.log("🔁 כבר ביקשנו הרשאה ויש טוקן תקף – שומרים אותו למשתמש הנוכחי");
-        await saveExpoPushToken(token);
-        return;
-      }
-
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== "granted") {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus === "granted") {
-        const newToken = (await Notifications.getExpoPushTokenAsync()).data;
-        console.log("🔔 קיבלנו הרשאה! הטוקן הוא:", newToken);
-
-        if (newToken && newToken.startsWith("ExponentPushToken")) {
-          await saveExpoPushToken(newToken);
-        } else {
-          console.warn("⚠️ הטוקן שהתקבל אינו תקף:", newToken);
-        }
-      } else {
-        Alert.alert(
-          "שים לב",
-          "כדי לקבל תזכורות יומיות, נא לאשר קבלת התראות."
+    const requestNotificationPermission = async () => {
+      try {
+        const alreadyAsked = await AsyncStorage.getItem(
+          "hasAskedNotificationPermission"
         );
+
+        const tokenResponse = await Notifications.getExpoPushTokenAsync();
+        const token = tokenResponse?.data;
+        const isTokenValid = token && token.startsWith("ExponentPushToken");
+
+        if (alreadyAsked && isTokenValid) {
+          console.log(
+            "🔁 כבר ביקשנו הרשאה ויש טוקן תקף – שומרים אותו למשתמש הנוכחי"
+          );
+          await saveExpoPushToken(token);
+          return;
+        }
+
+        const { status: existingStatus } =
+          await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+
+        if (existingStatus !== "granted") {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+
+        if (finalStatus === "granted") {
+          const newToken = (await Notifications.getExpoPushTokenAsync()).data;
+          console.log("🔔 קיבלנו הרשאה! הטוקן הוא:", newToken);
+
+          if (newToken && newToken.startsWith("ExponentPushToken")) {
+            await saveExpoPushToken(newToken);
+          } else {
+            console.warn("⚠️ הטוקן שהתקבל אינו תקף:", newToken);
+          }
+        } else {
+          Alert.alert(
+            "שים לב",
+            "כדי לקבל תזכורות יומיות, נא לאשר קבלת התראות."
+          );
+        }
+
+        await AsyncStorage.setItem("hasAskedNotificationPermission", "true");
+      } catch (error) {
+        console.error("❌ שגיאה בבקשת הרשאות Notifications:", error);
       }
+    };
 
-      await AsyncStorage.setItem("hasAskedNotificationPermission", "true");
-    } catch (error) {
-      console.error("❌ שגיאה בבקשת הרשאות Notifications:", error);
-    }
-  };
-
-  requestNotificationPermission();
-}, []);
+    requestNotificationPermission();
+  }, []);
 
   const handleLogout = () => {
     Alert.alert(
@@ -314,7 +328,7 @@ export default function HomeScreen() {
       { cancelable: true }
     );
   };
-  
+
   useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener(
       (notification) => {

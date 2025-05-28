@@ -106,16 +106,25 @@ const insightsAndRecommendations = {
 };
 
 const patternTranslations = {
-  pregnancy_limit_exceeded: "חריגה בהריון",
-  compensating_lifestyle: "פיצוי על חוסר תנועה",
-  health_risk: "סיכון בריאותי",
-  morning_drinker: "שותה קפה בבוקר כדי להתעורר",
-  fatigue_based: "שתייה עקב עייפות",
-  stress_drinker: "שתייה עקב מתח",
-  high_intake: "צריכה גבוהה לפי משקל",
-  habitual: "שתייה מתוך הרגל",
-  trying_to_reduce: "מנסה להפחית צריכה",
-  balanced: "צריכה מאוזנת"
+    morning_drinker: "שותה קפה בבוקר כדי להתעורר",
+    fatigue_based: "שתייה עקב עייפות",
+    fatigue_response: "תגובה לעייפות",
+    stress_drinker: "שתייה עקב מתח",
+    high_intake: "צריכה גבוהה לפי משקל",
+    habitual: "שתייה מתוך הרגל",
+    habitual_drinker: "שתייה מתוך הרגל",
+    considered_but_avoided: "שקל/ה אך נמנע/ה",
+    trying_to_reduce: "מנסה להפחית צריכה",
+    balanced: "צריכה מאוזנת",
+    pregnancy_limit_exceeded: "חריגה בהריון",
+    compensating_lifestyle: "פיצוי על חוסר תנועה",
+    health_risk: "סיכון בריאותי",
+    avoidance_due_to_physical_effects: "הימנעות עקב השפעה פיזית",
+    avoidance_due_to_mental_effects: "הימנעות עקב השפעה מנטלית",
+    conscious_no_coffee: "החלטה מודעת להימנע מקפה",
+    no_coffee_unintentional: "לא שתה – ללא כוונה מיוחדת",
+    general_consumption: "שתייה כללית / מסיבה אחרת",
+    unknown: "לא זוהה דפוס",
 };
 
 function evaluateDecisionTree(tree, user) {

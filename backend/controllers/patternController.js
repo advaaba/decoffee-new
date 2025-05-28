@@ -45,13 +45,24 @@ exports.analyzeAndSaveUserPattern = async (req, res) => {
 ${JSON.stringify(userData, null, 2)}
 
 זהה את דפוס צריכת הקפה המתאים ביותר מהרשימה הבאה בלבד:
-- morning_drinker
-- fatigue_based
-- stress_drinker
-- habitual
-- high_intake
-- trying_to_reduce
-- balanced
+- morning_drinker  
+- fatigue_based  
+- fatigue_response  
+- stress_drinker  
+- high_intake  
+- habitual  
+- habitual_drinker  
+- considered_but_avoided  
+- trying_to_reduce  
+- balanced  
+- pregnancy_limit_exceeded  
+- compensating_lifestyle  
+- health_risk  
+- avoidance_due_to_physical_effects  
+- avoidance_due_to_mental_effects  
+- conscious_no_coffee  
+- no_coffee_unintentional  
+- general_consumption  
 - unknown
 
 החזר תשובה בפורמט JSON בלבד, כך:
